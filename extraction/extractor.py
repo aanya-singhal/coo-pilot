@@ -1,12 +1,11 @@
 import os
 import json
+import mimetypes
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
 load_dotenv()
-
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 INVOICE_PROMPT = """
 You are extracting structured data from an invoice document.
@@ -18,10 +17,18 @@ Return ONLY valid JSON, no markdown, no explanation, matching exactly this shape
   "product": "<product name>",
   "quantity": <number, no units or commas>,
   "value": <number, no currency symbol or commas>,
-  "invoice_number": "<invoice number as shown>"
+  "invoice_number": "<invoice number as shown>",
+  "confidence": {
+    "exporter": <float 0.0-1.0, how confident you are this field was read correctly>,
+    "product": <float 0.0-1.0>,
+    "quantity": <float 0.0-1.0>,
+    "value": <float 0.0-1.0>,
+    "invoice_number": <float 0.0-1.0>
+  }
 }
 
-If a field is not present in the document, use null for that field.
+Use a lower confidence score if the text is blurry, ambiguous, partially cut off, or you had to guess.
+If a field is not present in the document, use null for that field and 0.0 for its confidence.
 """
 
 PACKING_LIST_PROMPT = """
@@ -34,18 +41,34 @@ Return ONLY valid JSON, no markdown, no explanation, matching exactly this shape
   "product": "<product name>",
   "quantity": <number, no units or commas>,
   "packages": <number of packages, integer>,
-  "packing_list_number": "<packing list number as shown>"
+  "packing_list_number": "<packing list number as shown>",
+  "confidence": {
+    "exporter": <float 0.0-1.0>,
+    "product": <float 0.0-1.0>,
+    "quantity": <float 0.0-1.0>,
+    "packages": <float 0.0-1.0>,
+    "packing_list_number": <float 0.0-1.0>
+  }
 }
 
-If a field is not present in the document, use null for that field.
+Use a lower confidence score if the text is blurry, ambiguous, partially cut off, or you had to guess.
+If a field is not present in the document, use null for that field and 0.0 for its confidence.
 """
 
 def extract_document(file_path: str, doc_type: str) -> dict:
     """
-    Extract structured data from a document image.
+    Extract structured data from a document image or PDF.
     doc_type must be either "invoice" or "packing_list".
-    Returns a dict matching the schema, or a dict with an "error" key if extraction failed.
+    Returns a dict matching the schema (including per-field confidence scores),
+    or a dict with an "error" key if extraction failed.
     """
+    # Build the Gemini client only when actually needed, so importing this
+    # module never crashes just because GEMINI_API_KEY isn't set yet.
+    try:
+        client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    except Exception as e:
+        return {"error": f"Extraction module unavailable: {e}"}
+
     if doc_type == "invoice":
         prompt = INVOICE_PROMPT
     elif doc_type == "packing_list":
@@ -55,15 +78,21 @@ def extract_document(file_path: str, doc_type: str) -> dict:
 
     try:
         with open(file_path, "rb") as f:
-            image_bytes = f.read()
+            file_bytes = f.read()
     except FileNotFoundError:
         return {"error": f"File not found: {file_path}"}
+
+    # Detect the real mime type from the file extension instead of
+    # hardcoding image/png, so JPG/JPEG/PDF uploads are labelled correctly.
+    mime_type, _ = mimetypes.guess_type(file_path)
+    if mime_type is None:
+        mime_type = "image/png"  # fallback default
 
     try:
         response = client.models.generate_content(
             model="gemini-3.6-flash",
             contents=[
-                types.Part.from_bytes(data=image_bytes, mime_type="image/png"),
+                types.Part.from_bytes(data=file_bytes, mime_type=mime_type),
                 prompt,
             ],
         )
