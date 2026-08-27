@@ -37,6 +37,14 @@ router = APIRouter(tags=["console"])
 #: Sample documents shipped by Person 1 live here.
 SAMPLES_DIR = Path(__file__).resolve().parents[2] / "extraction"
 
+#: The console colours on GREEN and treats everything else as amber, so the
+#: backend's decision is mapped to its vocabulary rather than the reverse.
+_DECISION_COLOURS = {
+    "APPROVED": "GREEN",
+    "REJECTED": "RED",
+    "PENDING_REVIEW": "YELLOW",
+}
+
 _CONTENT_TYPES = {
     ".pdf": "application/pdf",
     ".png": "image/png",
@@ -140,7 +148,8 @@ def process_console_case(
         "packing_list": extraction.get("packing_list"),
         "verdict": {
             "case_id": payload.case_id,
-            "verdict": decision,
+            "verdict": _DECISION_COLOURS.get(decision, "YELLOW"),
+            "decision": decision,
             "reason": (
                 "Documents extracted successfully. Awaiting the rules engine "
                 "for a reconciliation verdict."
@@ -150,4 +159,8 @@ def process_console_case(
             "rule_applied": rules.get("rule_applied", "Rules engine not integrated"),
             "rule_satisfied": bool(rules.get("rule_satisfied", False)),
         },
+        # Full detail for a dashboard that wants to show the working.
+        "reconciliation": result.get("reconciliation"),
+        "rules": rules,
+        "risk": result.get("risk"),
     }

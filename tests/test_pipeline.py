@@ -143,8 +143,22 @@ def test_unknown_decision_falls_back_to_pending_review(
     assert body["status"] == "PENDING_REVIEW"    # claim awaits a human
 
 
-def test_rules_adapter_placeholder_when_engine_missing() -> None:
-    """Person 2's engine is not in the repo yet - adapter must not invent one."""
+def test_rules_adapter_discovers_the_engine() -> None:
+    """The adapter must find rules.engine.evaluate without any backend change."""
+    result = rules_adapter.run_rules({"invoice": FAKE_INVOICE})
+
+    assert result["rules"] is not None
+    assert result["reconciliation"] is not None
+    assert result["risk"] is not None
+    # Only an invoice, and no origin declaration, so nothing can be approved.
+    assert result["decision"] == "PENDING_REVIEW"
+
+
+def test_rules_adapter_placeholder_when_engine_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """With no engine importable, the adapter must not invent a verdict."""
+    monkeypatch.setattr(rules_adapter, "CANDIDATE_MODULES", ("no.such.module",))
     result = rules_adapter.run_rules({"invoice": FAKE_INVOICE})
 
     assert result["decision"] == "PENDING_REVIEW"

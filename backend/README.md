@@ -94,20 +94,24 @@ extraction-side change.
 
 ### For Person 2
 
-Your engine is not in the repo yet, so the adapter returns a
-`NOT_IMPLEMENTED` placeholder with decision `PENDING_REVIEW` rather than
-inventing rules. To plug in, expose:
+A first implementation now lives in [`rules/`](../rules/README.md) — see that
+README for the criteria, sources, and the origin-data gap. It was written to
+unblock the demo and is yours to take over, replace, or extend.
+
+The adapter finds it by importing `rules.engine.evaluate`; it also checks
+`rules.rules_engine`, `rules_engine`, and `logic.rules_engine`, or add a path
+to `CANDIDATE_MODULES`. The contract is:
 
 ```python
 def evaluate(extraction: dict) -> dict:
     ...
 ```
 
-in one of `rules.engine`, `rules.rules_engine`, `rules_engine`, or
-`logic.rules_engine` (or add your path to `CANDIDATE_MODULES`). Input is
-`{"invoice": {...}, "packing_list": {...}}`. Return any of
-`reconciliation`, `rules`, `risk`, `decision` — anything else is preserved
-under `raw`.
+Input is `{"invoice": {...}, "packing_list": {...}}`, plus an optional
+`origin_declaration`. Return any of `reconciliation`, `rules`, `risk`,
+`decision` — anything else is preserved under `raw`. If no engine is
+importable the adapter returns a `NOT_IMPLEMENTED` placeholder rather than
+inventing a verdict.
 
 If `decision` is one of the claim statuses the backend mirrors it onto the
 claim; otherwise the claim stays `PENDING_REVIEW`. The backend never derives

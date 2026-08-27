@@ -43,7 +43,8 @@ def test_process_returns_console_shape(
     assert body["packing_list"]["doc_type"] == "packing_list"
     assert body["verdict"]["case_id"] == "case-clean-01"
     # No rules engine in the repo yet, so the verdict must not claim a pass.
-    assert body["verdict"]["verdict"] == "PENDING_REVIEW"
+    assert body["verdict"]["verdict"] == "YELLOW"
+    assert body["verdict"]["decision"] == "PENDING_REVIEW"
     assert body["verdict"]["rule_satisfied"] is False
 
 
