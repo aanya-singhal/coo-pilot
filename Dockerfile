@@ -15,9 +15,13 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# The pipeline imports the extraction module, so both packages are copied.
+# The pipeline imports the extraction and rules modules by name, so every
+# package it reaches through an adapter must be present. Omitting one does
+# not fail the build - the adapter falls back silently - so keep this list in
+# step with backend/services/*_adapter.py.
 COPY backend/ ./backend/
 COPY extraction/ ./extraction/
+COPY rules/ ./rules/
 COPY schema.py ./
 
 EXPOSE 8000
