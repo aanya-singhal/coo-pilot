@@ -102,3 +102,62 @@ def test_undeterminable_doc_type_is_rejected(client: TestClient) -> None:
 def test_empty_files_list_is_rejected(client: TestClient) -> None:
     response = client.post("/process", json={"case_id": "x", "files": []})
     assert response.status_code == 422
+
+
+DECLARATION = {
+    "agreement": "AIFTA",
+    "hs_code": "630231",
+    "fob_value": 4200.00,
+    "non_originating_materials": [
+        {"description": "Greige cotton fabric", "hs_code": "520811", "value": 1500.00}
+    ],
+}
+
+
+def test_without_declaration_console_cannot_show_green(
+    client: TestClient, mock_extraction: None
+) -> None:
+    """The gap this endpoint had: every case came back yellow."""
+    body = client.post("/process", json=CONSOLE_PAYLOAD).json()
+    assert body["verdict"]["verdict"] == "YELLOW"
+
+
+def test_declaration_lets_the_clean_case_reach_green(
+    client: TestClient, mock_extraction: None
+) -> None:
+    body = client.post(
+        "/process", json={**CONSOLE_PAYLOAD, "origin_declaration": DECLARATION}
+    ).json()
+
+    assert body["verdict"]["verdict"] == "GREEN"
+    assert body["verdict"]["decision"] == "APPROVED"
+    assert body["verdict"]["rule_satisfied"] is True
+    assert body["rules"]["origin"]["status"] == "EVALUATED"
+
+
+def test_failing_declaration_reaches_red(
+    client: TestClient, mock_extraction: None
+) -> None:
+    declaration = {
+        **DECLARATION,
+        "non_originating_materials": [
+            {"description": "Greige cotton fabric", "hs_code": "520811", "value": 3500.0}
+        ],
+    }
+    body = client.post(
+        "/process", json={**CONSOLE_PAYLOAD, "origin_declaration": declaration}
+    ).json()
+
+    assert body["verdict"]["verdict"] == "RED"
+    assert body["verdict"]["decision"] == "REJECTED"
+
+
+def test_declaration_is_persisted_on_the_claim(
+    client: TestClient, mock_extraction: None
+) -> None:
+    body = client.post(
+        "/process", json={**CONSOLE_PAYLOAD, "origin_declaration": DECLARATION}
+    ).json()
+    stored = client.get(f"/claims/{body['claim_id']}/origin-declaration")
+    assert stored.status_code == 200
+    assert stored.json()["declaration"]["hs_code"] == "630231"

@@ -26,7 +26,7 @@ from pydantic import BaseModel, Field
 
 from backend.config import ALLOWED_EXTENSIONS
 from backend.database import Database, get_database
-from backend.models import DocumentType
+from backend.models import DocumentType, OriginDeclarationRequest
 from backend.services import claims as claims_service, pipeline as pipeline_service
 from backend.services.storage import Storage, get_storage
 
@@ -56,6 +56,15 @@ _CONTENT_TYPES = {
 class ConsoleProcessRequest(BaseModel):
     case_id: str = Field(max_length=200)
     files: list[str] = Field(min_length=1, max_length=10)
+    origin_declaration: OriginDeclarationRequest | None = Field(
+        default=None,
+        description=(
+            "Cost statement backing the preferential claim. Without it the "
+            "rules engine cannot evaluate origin and every case returns "
+            "PENDING_REVIEW. The backend stores it verbatim and never "
+            "supplies a default."
+        ),
+    )
 
 
 def _resolve_sample(filename: str) -> Path:
@@ -117,6 +126,11 @@ def process_console_case(
             content=path.read_bytes(),
             content_type=_CONTENT_TYPES[PurePosixPath(name).suffix.lower()],
             doc_type=_infer_doc_type(name),
+        )
+
+    if payload.origin_declaration is not None:
+        claims_service.set_origin_declaration(
+            db, claim_id, payload.origin_declaration.model_dump(mode="json")
         )
 
     pipeline_service.process_claim(db, storage, claim_id)
