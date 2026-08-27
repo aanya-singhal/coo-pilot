@@ -11,6 +11,7 @@ from backend.models import (
     AuditLogResponse,
     ClaimCreateRequest,
     ClaimResponse,
+    ClaimStatus,
     ClaimResultResponse,
     OriginDeclarationRequest,
     OriginDeclarationResponse,
@@ -27,7 +28,10 @@ DatabaseDep = Annotated[Database, Depends(get_database)]
 def create_claim(payload: ClaimCreateRequest, db: DatabaseDep) -> ClaimResponse:
     """Create a Certificate of Origin verification case."""
     claim = claims_service.create_claim(
-        db, reference=payload.reference, metadata=payload.metadata
+        db,
+        reference=payload.reference,
+        exporter=payload.exporter,
+        metadata=payload.metadata,
     )
     return ClaimResponse(**claim)
 
@@ -36,9 +40,15 @@ def create_claim(payload: ClaimCreateRequest, db: DatabaseDep) -> ClaimResponse:
 def list_claims(
     db: DatabaseDep,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    status: Annotated[
+        list[ClaimStatus] | None,
+        Query(description="Filter by status. Repeat the parameter to pass several."),
+    ] = None,
 ) -> list[ClaimResponse]:
-    """List recent claims, newest first (convenience for the dashboard)."""
-    return [ClaimResponse(**c) for c in claims_service.list_claims(db, limit=limit)]
+    """List recent claims, newest first, optionally filtered by status."""
+    statuses = [str(s) for s in status] if status else None
+    rows = claims_service.list_claims(db, limit=limit, statuses=statuses)
+    return [ClaimResponse(**c) for c in rows]
 
 
 @router.get("/{claim_id}", response_model=ClaimResponse)

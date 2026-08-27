@@ -16,9 +16,16 @@ logger = logging.getLogger(__name__)
 CLAIM_CREATED: Final = "claim_created"
 DOCUMENT_UPLOADED: Final = "document_uploaded"
 ORIGIN_DECLARATION_SET: Final = "origin_declaration_set"
+EXTRACTION_STARTED: Final = "extraction_started"
+EXTRACTION_COMPLETED: Final = "extraction_completed"
+EXTRACTION_FAILED: Final = "extraction_failed"
+RECONCILIATION_COMPLETED: Final = "reconciliation_completed"
 PROCESSING_STARTED: Final = "processing_started"
 PROCESSING_COMPLETED: Final = "processing_completed"
 PROCESSING_FAILED: Final = "processing_failed"
+APPROVED: Final = "approved"
+REJECTED: Final = "rejected"
+INFORMATION_REQUESTED: Final = "information_requested"
 
 #: Keys stripped from ``details`` before persisting, as a safety net.
 _REDACTED_KEYS: frozenset[str] = frozenset(

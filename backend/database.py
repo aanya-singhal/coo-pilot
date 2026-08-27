@@ -38,16 +38,37 @@ class Database(ABC):
 
     # --- claims -------------------------------------------------------
     @abstractmethod
-    def create_claim(self, *, reference: str | None, metadata: dict[str, Any]) -> Row: ...
+    def create_claim(
+        self,
+        *,
+        claim_number: str,
+        reference: str | None,
+        exporter: str | None,
+        metadata: dict[str, Any],
+    ) -> Row: ...
 
     @abstractmethod
     def get_claim(self, claim_id: str) -> Row | None: ...
 
     @abstractmethod
-    def list_claims(self, *, limit: int = 50) -> list[Row]: ...
+    def list_claims(
+        self, *, limit: int = 50, statuses: list[str] | None = None
+    ) -> list[Row]: ...
 
     @abstractmethod
     def update_claim_status(self, claim_id: str, status: str) -> Row | None: ...
+
+    @abstractmethod
+    def count_claims_by_status(self) -> dict[str, int]: ...
+
+    # --- human review decisions ---------------------------------------
+    @abstractmethod
+    def create_decision(
+        self, *, claim_id: str, decision: str, reviewer: str, comments: str | None
+    ) -> Row: ...
+
+    @abstractmethod
+    def list_decisions(self, claim_id: str) -> list[Row]: ...
 
     # --- documents ----------------------------------------------------
     @abstractmethod
@@ -72,7 +93,12 @@ class Database(ABC):
     # --- extraction results (owned by Person 1's module) --------------
     @abstractmethod
     def save_extracted_data(
-        self, *, claim_id: str, document_id: str, data: dict[str, Any]
+        self,
+        *,
+        claim_id: str,
+        document_id: str,
+        data: dict[str, Any],
+        extraction_status: str,
     ) -> Row: ...
 
     @abstractmethod
@@ -113,16 +139,26 @@ class InMemoryDatabase(Database):
         self.claims: dict[str, Row] = {}
         self.documents: dict[str, Row] = {}
         self.extracted: list[Row] = []
+        self.decisions: list[Row] = []
         self.declarations: dict[str, Row] = {}
         self.verifications: dict[str, Row] = {}
         self.audit: list[Row] = []
 
     # --- claims -------------------------------------------------------
-    def create_claim(self, *, reference: str | None, metadata: dict[str, Any]) -> Row:
+    def create_claim(
+        self,
+        *,
+        claim_number: str,
+        reference: str | None,
+        exporter: str | None,
+        metadata: dict[str, Any],
+    ) -> Row:
         now = _now()
         row: Row = {
             "id": _new_id(),
+            "claim_number": claim_number,
             "reference": reference,
+            "exporter": exporter,
             "status": "CREATED",
             "metadata": metadata,
             "created_at": now,
@@ -135,8 +171,12 @@ class InMemoryDatabase(Database):
         row = self.claims.get(claim_id)
         return dict(row) if row else None
 
-    def list_claims(self, *, limit: int = 50) -> list[Row]:
+    def list_claims(
+        self, *, limit: int = 50, statuses: list[str] | None = None
+    ) -> list[Row]:
         rows = sorted(self.claims.values(), key=lambda r: r["created_at"], reverse=True)
+        if statuses:
+            rows = [r for r in rows if r["status"] in statuses]
         return [dict(r) for r in rows[:limit]]
 
     def update_claim_status(self, claim_id: str, status: str) -> Row | None:
@@ -146,6 +186,32 @@ class InMemoryDatabase(Database):
         row["status"] = status
         row["updated_at"] = _now()
         return dict(row)
+
+    def count_claims_by_status(self) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for row in self.claims.values():
+            counts[row["status"]] = counts.get(row["status"], 0) + 1
+        return counts
+
+    # --- decisions ----------------------------------------------------
+    def create_decision(
+        self, *, claim_id: str, decision: str, reviewer: str, comments: str | None
+    ) -> Row:
+        row: Row = {
+            "id": _new_id(),
+            "claim_id": claim_id,
+            "decision": decision,
+            "reviewer": reviewer,
+            "comments": comments,
+            "created_at": _now(),
+        }
+        self.decisions.append(row)
+        return dict(row)
+
+    def list_decisions(self, claim_id: str) -> list[Row]:
+        rows = [r for r in self.decisions if r["claim_id"] == claim_id]
+        rows.sort(key=lambda r: r["created_at"])
+        return [dict(r) for r in rows]
 
     # --- documents ----------------------------------------------------
     def create_document(
@@ -183,15 +249,25 @@ class InMemoryDatabase(Database):
 
     # --- extraction ---------------------------------------------------
     def save_extracted_data(
-        self, *, claim_id: str, document_id: str, data: dict[str, Any]
+        self,
+        *,
+        claim_id: str,
+        document_id: str,
+        data: dict[str, Any],
+        extraction_status: str,
     ) -> Row:
         row: Row = {
             "id": _new_id(),
             "claim_id": claim_id,
             "document_id": document_id,
             "data": data,
+            "extraction_status": extraction_status,
             "created_at": _now(),
         }
+        # One row per document: re-extracting replaces the previous result.
+        self.extracted = [
+            r for r in self.extracted if r["document_id"] != document_id
+        ]
         self.extracted.append(row)
         return dict(row)
 
@@ -265,8 +341,21 @@ class SupabaseDatabase(Database):
         return rows[0] if rows else None
 
     # --- claims -------------------------------------------------------
-    def create_claim(self, *, reference: str | None, metadata: dict[str, Any]) -> Row:
-        payload = {"reference": reference, "status": "CREATED", "metadata": metadata}
+    def create_claim(
+        self,
+        *,
+        claim_number: str,
+        reference: str | None,
+        exporter: str | None,
+        metadata: dict[str, Any],
+    ) -> Row:
+        payload = {
+            "claim_number": claim_number,
+            "reference": reference,
+            "exporter": exporter,
+            "status": "CREATED",
+            "metadata": metadata,
+        }
         response = self._client.table("claims").insert(payload).execute()
         row = self._one(response)
         if row is None:
@@ -279,12 +368,46 @@ class SupabaseDatabase(Database):
         )
         return self._one(response)
 
-    def list_claims(self, *, limit: int = 50) -> list[Row]:
+    def list_claims(
+        self, *, limit: int = 50, statuses: list[str] | None = None
+    ) -> list[Row]:
+        query = self._client.table("claims").select("*")
+        if statuses:
+            query = query.in_("status", statuses)
+        response = query.order("created_at", desc=True).limit(limit).execute()
+        return self._rows(response)
+
+    def count_claims_by_status(self) -> dict[str, int]:
+        response = self._client.table("claims").select("status").execute()
+        counts: dict[str, int] = {}
+        for row in self._rows(response):
+            status = row.get("status")
+            if status:
+                counts[status] = counts.get(status, 0) + 1
+        return counts
+
+    # --- decisions ----------------------------------------------------
+    def create_decision(
+        self, *, claim_id: str, decision: str, reviewer: str, comments: str | None
+    ) -> Row:
+        payload = {
+            "claim_id": claim_id,
+            "decision": decision,
+            "reviewer": reviewer,
+            "comments": comments,
+        }
+        response = self._client.table("decisions").insert(payload).execute()
+        row = self._one(response)
+        if row is None:
+            raise RuntimeError("Supabase did not return the inserted decision")
+        return row
+
+    def list_decisions(self, claim_id: str) -> list[Row]:
         response = (
-            self._client.table("claims")
+            self._client.table("decisions")
             .select("*")
-            .order("created_at", desc=True)
-            .limit(limit)
+            .eq("claim_id", claim_id)
+            .order("created_at")
             .execute()
         )
         return self._rows(response)
@@ -345,10 +468,24 @@ class SupabaseDatabase(Database):
 
     # --- extraction ---------------------------------------------------
     def save_extracted_data(
-        self, *, claim_id: str, document_id: str, data: dict[str, Any]
+        self,
+        *,
+        claim_id: str,
+        document_id: str,
+        data: dict[str, Any],
+        extraction_status: str,
     ) -> Row:
-        payload = {"claim_id": claim_id, "document_id": document_id, "data": data}
-        response = self._client.table("extracted_data").insert(payload).execute()
+        payload = {
+            "claim_id": claim_id,
+            "document_id": document_id,
+            "data": data,
+            "extraction_status": extraction_status,
+        }
+        response = (
+            self._client.table("extracted_data")
+            .upsert(payload, on_conflict="document_id")
+            .execute()
+        )
         row = self._one(response)
         if row is None:
             raise RuntimeError("Supabase did not return the inserted extracted_data row")

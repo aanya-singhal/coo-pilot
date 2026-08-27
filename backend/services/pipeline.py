@@ -25,6 +25,64 @@ class NoDocumentsError(Exception):
     """Raised when a claim has no uploaded documents to process."""
 
 
+def extraction_status_of(result: dict[str, Any]) -> str:
+    """Classify an extraction result without interpreting its contents."""
+    if result.get("error"):
+        return "FAILED"
+    if result.get("skipped"):
+        return "SKIPPED"
+    return "SUCCESS"
+
+
+def extract_document(
+    db: Database, storage: Storage, document: dict[str, Any]
+) -> dict[str, Any]:
+    """Run Person 1's extractor over one stored document and persist the result.
+
+    Returns the stored ``extracted_data`` row. Never raises for an extraction
+    failure - the failure is recorded so the reason survives in the database.
+    """
+    claim_id = document["claim_id"]
+    audit.log_action(
+        db,
+        claim_id=claim_id,
+        action=audit.EXTRACTION_STARTED,
+        details={"document_id": document["id"], "doc_type": document["doc_type"]},
+    )
+
+    try:
+        content = storage.download(document["storage_path"])
+    except Exception as exc:
+        logger.exception("Could not download %s", document["storage_path"])
+        result: dict[str, Any] = {"error": f"Could not read stored file: {exc}"}
+    else:
+        result = extract_document_bytes(
+            content=content,
+            filename=document["filename"],
+            doc_type=document["doc_type"],
+        )
+
+    status = extraction_status_of(result)
+    row = db.save_extracted_data(
+        claim_id=claim_id,
+        document_id=document["id"],
+        data=result,
+        extraction_status=status,
+    )
+
+    audit.log_action(
+        db,
+        claim_id=claim_id,
+        action=(
+            audit.EXTRACTION_FAILED
+            if status == "FAILED"
+            else audit.EXTRACTION_COMPLETED
+        ),
+        details={"document_id": document["id"], "extraction_status": status},
+    )
+    return row
+
+
 def _extract_all(
     db: Database, storage: Storage, claim_id: str, documents: list[dict[str, Any]]
 ) -> dict[str, Any]:
@@ -36,24 +94,9 @@ def _extract_all(
     A per-document failure is recorded and does not abort the run.
     """
     extraction: dict[str, Any] = {}
-
     for document in documents:
-        doc_type = document["doc_type"]
-        try:
-            content = storage.download(document["storage_path"])
-        except Exception as exc:
-            logger.exception("Could not download %s", document["storage_path"])
-            result: dict[str, Any] = {"error": f"Could not read stored file: {exc}"}
-        else:
-            result = extract_document_bytes(
-                content=content, filename=document["filename"], doc_type=doc_type
-            )
-
-        db.save_extracted_data(
-            claim_id=claim_id, document_id=document["id"], data=result
-        )
-        extraction[doc_type] = result
-
+        row = extract_document(db, storage, document)
+        extraction[document["doc_type"]] = row["data"]
     return extraction
 
 
@@ -147,6 +190,7 @@ def get_result(db: Database, claim_id: str) -> dict[str, Any]:
         "rules": result.get("rules"),
         "risk": result.get("risk"),
         "decision": result.get("decision"),
+        "decisions": db.list_decisions(claim_id),
         "status": claim["status"],
         "processed_at": (verification or {}).get("created_at"),
     }

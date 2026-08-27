@@ -22,6 +22,21 @@ class ClaimStatus(StrEnum):
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
     FAILED = "FAILED"
+    REQUESTED_INFO = "REQUESTED_INFO"
+
+
+class RiskLevel(StrEnum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+
+
+class ReviewAction(StrEnum):
+    """A reviewer's disposition of a claim."""
+
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    REQUESTED_INFO = "REQUESTED_INFO"
 
 
 class DocumentType(StrEnum):
@@ -42,10 +57,20 @@ class ClaimCreateRequest(BaseModel):
         max_length=200,
         description="Optional human-facing reference, e.g. an exporter case number.",
     )
+    exporter: str | None = Field(
+        default=None, max_length=300, description="Exporter named on the claim."
+    )
     metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Free-form JSON stored alongside the claim.",
     )
+
+
+class ReviewDecisionRequest(BaseModel):
+    """A human reviewer's decision on a claim."""
+
+    reviewer: str = Field(min_length=1, max_length=200)
+    comments: str | None = Field(default=None, max_length=4000)
 
 
 # --- responses -------------------------------------------------------
@@ -85,11 +110,54 @@ class OriginDeclarationResponse(BaseModel):
 
 class ClaimResponse(BaseModel):
     id: str
+    claim_number: str | None = None
     reference: str | None = None
+    exporter: str | None = None
     status: ClaimStatus
     metadata: dict[str, Any] = Field(default_factory=dict)
     created_at: str | None = None
     updated_at: str | None = None
+
+
+class DecisionResponse(BaseModel):
+    id: str
+    claim_id: str
+    decision: ReviewAction
+    reviewer: str
+    comments: str | None = None
+    created_at: str | None = None
+
+
+class DashboardResponse(BaseModel):
+    """Counts for the dashboard. Person 4 renders these; the backend counts."""
+
+    total: int
+    created: int
+    processing: int
+    pending_review: int
+    approved: int
+    rejected: int
+    failed: int
+    requested_info: int
+
+
+class ReconciliationResponse(BaseModel):
+    """Deterministic cross-document comparison result."""
+
+    status: str
+    matches: list[dict[str, Any]] = Field(default_factory=list)
+    mismatches: list[dict[str, Any]] = Field(default_factory=list)
+    missing_documents: list[str] = Field(default_factory=list)
+    summary: str | None = None
+
+
+class ExtractionResponse(BaseModel):
+    id: str
+    claim_id: str
+    document_id: str
+    extraction_status: str
+    data: dict[str, Any] = Field(default_factory=dict)
+    created_at: str | None = None
 
 
 class DocumentResponse(BaseModel):
@@ -138,6 +206,9 @@ class ClaimResultResponse(BaseModel):
     rules: dict[str, Any] | None = None
     risk: dict[str, Any] | None = None
     decision: str | None = None
+    decisions: list[DecisionResponse] = Field(
+        default_factory=list, description="Human review decisions, newest last."
+    )
     status: ClaimStatus
     processed_at: str | None = None
 

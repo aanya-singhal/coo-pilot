@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import get_settings
 from backend.models import HealthResponse, RootResponse
-from backend.routes import claims, console, documents, pipeline
+from backend.routes import claims, console, dashboard, documents, pipeline, review
 
 logging.basicConfig(level=logging.INFO)
 
@@ -38,9 +38,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# review is included first so that GET /claims/review matches the literal
+# path instead of being captured by GET /claims/{claim_id}.
+app.include_router(review.router)
 app.include_router(claims.router)
 app.include_router(documents.router)
 app.include_router(pipeline.router)
+app.include_router(dashboard.router)
 app.include_router(console.router)
 
 

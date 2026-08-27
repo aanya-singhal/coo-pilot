@@ -40,16 +40,29 @@ It creates `claims`, `documents`, `extracted_data`, `verification_results`,
 | --- | --- | --- |
 | GET | `/` | Service info |
 | GET | `/health` | Liveness + whether Supabase is configured |
+| GET | `/dashboard` | Claim counts by status |
 | POST | `/claims` | Create a claim |
-| GET | `/claims` | List recent claims |
+| GET | `/claims` | List claims; `?status=` filters, repeatable |
+| GET | `/claims/review` | Review queue |
 | GET | `/claims/{claim_id}` | Get one claim |
 | POST | `/claims/{claim_id}/documents` | Upload a PDF/PNG/JPG/JPEG |
 | GET | `/claims/{claim_id}/documents` | List a claim's documents |
+| POST | `/claims/{claim_id}/documents/{document_id}/extract` | Extract one document |
 | PUT | `/claims/{claim_id}/origin-declaration` | Attach the cost statement |
 | GET | `/claims/{claim_id}/origin-declaration` | Read it back |
-| POST | `/claims/{claim_id}/process` | Run the pipeline |
+| POST | `/claims/{claim_id}/reconcile` | Compare extracted documents |
+| POST | `/claims/{claim_id}/verify` | Run the full pipeline |
+| POST | `/claims/{claim_id}/process` | Alias of `/verify` |
 | GET | `/claims/{claim_id}/result` | Full result for the dashboard |
+| GET | `/claims/{claim_id}/review` | Review detail |
+| POST | `/claims/{claim_id}/approve` | Approve (`reviewer`, `comments`) |
+| POST | `/claims/{claim_id}/reject` | Reject |
+| POST | `/claims/{claim_id}/request-info` | Ask for more information |
+| GET | `/claims/{claim_id}/decisions` | Decision history |
 | GET | `/claims/{claim_id}/audit` | Audit trail |
+
+`/claims/review` is a literal path, so its router is registered before the
+`/claims/{claim_id}` router — otherwise `review` would be read as a claim id.
 
 ### Typical flow
 
