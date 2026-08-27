@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CoO-PILOT — Pre-Clearance Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0B2447; --navy-2:#10305C; --link:#1E5FA8;
+  --paper:#FFFFFF; --wash:#F4F7FB; --wash-2:#EAF0F7;
+  --rule:#D8E1EC; --rule-2:#C3D1E2;
+  --ink:#0E1B2C; --ink-2:#41546B; --ink-3:#71829A;
+  --green:#1B7F4B; --green-bg:#E8F4ED;
+  --amber:#B7791F; --amber-bg:#FDF3E2;
+  --red:#B03030; --red-bg:#FBECEC;
+  --sans:"IBM Plex Sans",-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--sans);color:var(--ink);background:var(--wash);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5}
+.masthead{background:var(--navy);color:#fff;padding:14px 24px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.seal{width:34px;height:34px;border:1.5px solid rgba(255,255,255,.55);border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-size:10px;font-weight:600;flex:none}
+.mast-title{font-size:17px;font-weight:600;letter-spacing:-.01em;line-height:1.2}
+.mast-sub{font-size:11.5px;color:#A9C0DC;margin-top:2px}
+.mast-meta{margin-left:auto;display:flex;gap:22px;text-align:right}
+.mast-meta div{font-family:var(--mono);font-size:10.5px;color:#A9C0DC;letter-spacing:.04em}
+.mast-meta strong{display:block;font-family:var(--sans);font-size:12px;color:#fff;font-weight:500;letter-spacing:0}
+.shell{display:grid;grid-template-columns:326px minmax(0,1fr);min-height:calc(100vh - 62px)}
+.rail{background:var(--paper);border-right:1px solid var(--rule);padding:20px 20px 40px}
+.stage{padding:20px 26px 60px;min-width:0}
+.eyebrow{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.rail h2{font-size:12.5px;font-weight:600;margin:0 0 10px}
+hr.div{border:0;border-top:1px solid var(--rule);margin:22px 0}
+.case{width:100%;text-align:left;background:var(--paper);border:1px solid var(--rule);border-left:3px solid var(--rule-2);padding:11px 12px;margin-bottom:8px;cursor:pointer;font:inherit;transition:.14s}
+.case:hover{background:var(--wash)}
+.case[aria-pressed="true"]{border-color:var(--navy);border-left-color:var(--navy);background:var(--wash-2)}
+.case .cid{font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+.case .cname{font-weight:600;font-size:13px;margin:2px 0 3px}
+.case .cdesc{font-size:11.5px;color:var(--ink-2);line-height:1.4}
+.doc{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px dotted var(--rule)}
+.doc:last-child{border-bottom:0}
+.doc .ic{width:26px;height:32px;flex:none;border:1px solid var(--rule-2);border-radius:2px;background:var(--wash);position:relative;overflow:hidden}
+.doc .ic:before{content:"";position:absolute;inset:6px 5px auto 5px;height:1px;background:var(--rule-2);box-shadow:0 4px 0 var(--rule-2),0 8px 0 var(--rule-2),0 12px 0 var(--rule-2)}
+.doc .dn{font-size:12.5px;font-weight:500}
+.doc .dm{font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+.run{width:100%;margin-top:18px;background:var(--navy);color:#fff;border:0;padding:12px;font:inherit;font-weight:600;font-size:13px;cursor:pointer}
+.run:hover:not(:disabled){background:var(--navy-2)}
+.run:disabled{background:var(--rule-2);cursor:not-allowed}
+.pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--rule-2);padding:3px 8px;color:var(--ink-2);background:var(--wash)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--ink-3)}
+.dot.on{background:var(--green)}
+.srcnote{margin-top:14px;font-size:11px;color:var(--ink-3);line-height:1.45}
+.pipe{background:var(--paper);border:1px solid var(--rule);padding:20px 22px 18px;margin-bottom:18px}
+.pipe-head{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.pipe-head h1{font-size:14px;font-weight:600;margin:0}
+.steps{display:grid;grid-template-columns:repeat(7,1fr);position:relative}
+.step{position:relative;padding:0 8px;text-align:center}
+.step:before{content:"";position:absolute;top:13px;left:0;right:0;height:2px;background:var(--rule)}
+.step:first-child:before{left:50%}
+.step:last-child:before{right:50%}
+.step .fill{position:absolute;top:13px;left:0;height:2px;width:0;background:var(--navy);transition:width .5s ease}
+.step.done .fill,.step.active .fill{width:100%}
+.step:last-child .fill{width:0!important}
+.node{width:28px;height:28px;border-radius:50%;border:2px solid var(--rule);background:var(--paper);margin:0 auto 8px;display:grid;place-items:center;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink-3);position:relative;z-index:2;transition:.25s}
+.step.active .node{border-color:var(--link);color:var(--link);box-shadow:0 0 0 5px rgba(30,95,168,.13)}
+.step.done .node{border-color:var(--navy);background:var(--navy);color:#fff}
+.step.hold .node{border-color:var(--amber);background:var(--amber);color:#fff}
+.step .lbl{font-size:11px;font-weight:600;line-height:1.25;color:var(--ink-3);transition:.2s}
+.step .sub{font-family:var(--mono);font-size:9.5px;color:var(--rule-2);margin-top:2px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.step.done .lbl,.step.active .lbl,.step.hold .lbl{color:var(--ink)}
+.step.done .sub,.step.active .sub,.step.hold .sub{color:var(--ink-3)}
+.step.active .node:after{content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid var(--link);border-top-color:transparent;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.panel{background:var(--paper);border:1px solid var(--rule);margin-bottom:14px;opacity:0;transform:translateY(6px);animation:rise .32s ease forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+.p-head{display:flex;align-items:center;gap:10px;padding:11px 18px;border-bottom:1px solid var(--rule);background:var(--wash)}
+.p-num{font-family:var(--mono);font-size:10px;font-weight:600;color:#fff;background:var(--navy);width:18px;height:18px;display:grid;place-items:center;flex:none}
+.p-head h3{font-size:12.5px;font-weight:600;margin:0}
+.p-head .tag{margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3)}
+.p-body{padding:16px 18px}
+.ev{width:100%;border-collapse:collapse}
+.ev th{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:0 10px 8px;border-bottom:1px solid var(--rule);font-weight:600}
+.ev td{padding:8px 10px;border-bottom:1px dotted var(--rule);vertical-align:top;font-size:12.5px}
+.ev tr:last-child td{border-bottom:0}
+.ev .f{color:var(--ink-2);font-size:12px}
+.ev .v{font-family:var(--mono);font-size:12px;font-weight:500}
+.ev .prov{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);display:block;margin-top:2px}
+tr.clash td{background:var(--amber-bg)}
+tr.clash .v{color:var(--amber);font-weight:600}
+tr.agree .v:after{content:" ✓";color:var(--green);font-weight:600}
+.find{display:flex;gap:11px;padding:11px 0;border-bottom:1px dotted var(--rule)}
+.find:last-child{border-bottom:0}
+.badge-sq{width:17px;height:17px;flex:none;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;margin-top:1px}
+.sq-ok{background:var(--green)} .sq-warn{background:var(--amber)} .sq-info{background:var(--link)}
+.find .ft{font-size:12.5px;font-weight:600;margin-bottom:2px}
+.find .fd{font-size:12px;color:var(--ink-2);line-height:1.45}
+.find .fd code{font-family:var(--mono);font-size:11.5px;background:var(--wash-2);padding:1px 4px}
+.verdict{border-left:4px solid;padding:16px 18px;display:flex;gap:15px;align-items:flex-start}
+.v-green{background:var(--green-bg);border-color:var(--green)}
+.v-amber{background:var(--amber-bg);border-color:var(--amber)}
+.v-red{background:var(--red-bg);border-color:var(--red)}
+.v-mark{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.1em;padding:5px 11px;color:#fff;flex:none}
+.v-green .v-mark{background:var(--green)} .v-amber .v-mark{background:var(--amber)} .v-red .v-mark{background:var(--red)}
+.v-title{font-size:15px;font-weight:600;margin:0 0 5px}
+.v-reason{font-size:13px;color:var(--ink-2);line-height:1.5;max-width:62ch}
+.v-reason strong{color:var(--ink)}
+.acts{display:flex;gap:9px;flex-wrap:wrap;margin-top:4px}
+.act{font:inherit;font-size:12.5px;font-weight:500;padding:9px 15px;border:1px solid var(--rule-2);background:var(--paper);cursor:pointer;transition:.14s}
+.act:hover{border-color:var(--navy);background:var(--wash)}
+.act.primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+.hint{font-size:11.5px;color:var(--ink-3);margin:0 0 11px;line-height:1.45}
+.log{font-family:var(--mono);font-size:11px;line-height:1.85;max-height:190px;overflow-y:auto;color:var(--ink-2)}
+.log div{display:flex;gap:12px}
+.log .ts{color:var(--ink-3);flex:none}
+.log .st{color:var(--navy);font-weight:600;flex:none;width:120px}
+.empty{background:var(--paper);border:1px dashed var(--rule-2);padding:52px 30px;text-align:center}
+.empty h3{font-size:14px;font-weight:600;margin:0 0 7px}
+.empty p{font-size:12.5px;color:var(--ink-2);margin:0 auto;max-width:46ch;line-height:1.55}
+@media (max-width:940px){
+  .shell{grid-template-columns:1fr}
+  .rail{border-right:0;border-bottom:1px solid var(--rule)}
+  .steps{grid-template-columns:repeat(4,1fr);gap:16px 0}
+  .step:before,.step .fill{display:none}
+  .mast-meta{margin-left:0;width:100%}
+}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="seal">CoO</div>
+  <div>
+    <div class="mast-title">CoO-PILOT — Certificate of Origin Pre-Clearance Console</div>
+    <div class="mast-sub">Evidence-backed verification layer over eCoO 2.0 · Human-in-the-loop · Prototype</div>
+  </div>
+  <div class="mast-meta">
+    <div>Problem statement<strong>IHSIH024</strong></div>
+    <div>Team<strong>Null Pointers</strong></div>
+    <div>Issuing agency<strong>Demo / Sandbox</strong></div>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="rail">
+    <div class="eyebrow" style="margin-bottom:9px">Select case</div>
+    <div id="cases"></div>
+    <hr class="div">
+    <h2>Documents submitted</h2>
+    <div id="docs"></div>
+    <button class="run" id="run">Run pre-clearance</button>
+    <div style="margin-top:12px"><span class="pill"><span class="dot" id="beDot"></span><span id="beText">Checking backend…</span></span></div>
+    <p class="srcnote">Calls <code style="font-family:var(--mono)">POST /process</code> on the local FastAPI service when it is running, and replays the recorded case when it is not.</p>
+    <hr class="div">
+    <h2>Scope of this build</h2>
+    <p class="srcnote">Two document types: commercial invoice and packing list. Two cases: one clean, one requiring correction. Cross-document reconciliation on exporter, product, quantity and document reference.</p>
+  </aside>
+
+  <main class="stage">
+    <section class="pipe">
+      <div class="pipe-head">
+        <span class="eyebrow">Pipeline</span>
+        <h1>AI extracts and interprets · deterministic logic verifies · calibrated risk routes attention</h1>
+      </div>
+      <div class="steps" id="steps"></div>
+    </section>
+    <div id="out">
+      <div class="empty">
+        <h3>No case processed yet</h3>
+        <p>Pick a case on the left and run pre-clearance. Each stage writes its findings here as it completes, and the officer decision stays open until you close it.</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   CONFIG — the only things you change when the backend goes live
+   ═══════════════════════════════════════════════════════════════════ */
+const API_BASE = "http://localhost:8000";   // Person 3's FastAPI
+const RULE_NAME = "Cross-document consistency (Invoice ↔ Packing List)";
+// ↑ When Person 2's origin rule is ready, change this to their rule name,
+//   e.g. "AIFTA · RVC 35%". The backend's verdict.rule_applied overrides
+//   this whenever the API responds.
+
+/* ═══════════════════════════════════════════════════════════════════
+   DEMO DATA — matches schema.py exactly (InvoiceData / PackingListData / Verdict)
+   Values are the real numbers from the sample PNGs in /extraction
+   ═══════════════════════════════════════════════════════════════════ */
+const DEMO = {
+  clean:{
+    case_id:"case-clean-01",
+    label:"Clean submission",
+    blurb:"Cotton bedsheets, Coimbatore. Documents agree.",
+    files:["sample_invoice.png","packing_list_clean.png"],
+    invoice:{doc_type:"invoice", exporter:"Nilgiri Textiles Pvt Ltd", product:"Cotton Bedsheets (Set)",
+             quantity:500, value:4200.00, invoice_number:"INV-2026-0451"},
+    packing_list:{doc_type:"packing_list", exporter:"Nilgiri Textiles Pvt Ltd", product:"Cotton Bedsheets (Set)",
+             quantity:500, packages:25, packing_list_number:"PL-2026-0451"},
+    verdict:{case_id:"case-clean-01", verdict:"GREEN",
+             reason:"All shared fields agree across both documents. Exporter, product and quantity match, and the packing list reference aligns with the invoice number.",
+             rule_applied:RULE_NAME, rule_satisfied:true}
+  },
+  sloppy:{
+    case_id:"case-sloppy-01",
+    label:"Correction required",
+    blurb:"Same exporter. Quantity and document reference disagree.",
+    files:["sample_invoice.png","packing_list_sloppy.png"],
+    invoice:{doc_type:"invoice", exporter:"Nilgiri Textiles Pvt Ltd", product:"Cotton Bedsheets (Set)",
+             quantity:500, value:4200.00, invoice_number:"INV-2026-0451"},
+    packing_list:{doc_type:"packing_list", exporter:"Nilgiri Textiles Pvt Ltd", product:"Cotton Bedsheets (Set)",
+             quantity:480, packages:24, packing_list_number:"PL-2026-0452"},
+    verdict:{case_id:"case-sloppy-01", verdict:"YELLOW",
+             reason:"Invoice quantity 500 units vs Packing List quantity 480 units — a shortfall of 20 units. The packing list also carries reference PL-2026-0452, which does not correspond to invoice INV-2026-0451.",
+             rule_applied:RULE_NAME, rule_satisfied:false}
+  }
+};
+
+const STAGES=[
+  {n:1,lbl:"Multimodal AI",sub:"ocr · vision"},
+  {n:2,lbl:"Structured evidence",sub:"field → source"},
+  {n:3,lbl:"Reconciliation",sub:"cross-document"},
+  {n:4,lbl:"Rule engine",sub:"origin rule"},
+  {n:5,lbl:"Risk engine",sub:"anomaly · gaps"},
+  {n:6,lbl:"Autonomy gate",sub:"policy"},
+  {n:7,lbl:"Officer",sub:"final decision"}
+];
+
+let active="clean", running=false, backendUp=false;
+const $=s=>document.querySelector(s);
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ── the ONE function to swap when the backend is live ───────────── */
+async function loadCase(key){
+  if(backendUp){
+    try{
+      const r = await fetch(`${API_BASE}/process`,{
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({case_id:DEMO[key].case_id, files:DEMO[key].files})
+      });
+      if(r.ok){
+        const data = await r.json();          // expects {invoice, packing_list, verdict}
+        return {...DEMO[key], ...data};       // keep label/blurb, take real data
+      }
+    }catch(e){ console.warn("Backend call failed, using recorded case:", e); }
+  }
+  return DEMO[key];
+}
+
+/* ── derive the comparison rows from the two doc objects ─────────── */
+function compare(inv, pl){
+  const norm = s => (s||"").toLowerCase().replace(/[.,]/g,"")
+    .replace(/\b(pvt|private|ltd|limited|llp|inc|co)\b/g,"").replace(/\s+/g," ").trim();
+  return [
+    {f:"Exporter", a:inv.exporter, b:pl.exporter, ok:norm(inv.exporter)===norm(pl.exporter),
+     pa:"invoice · header", pb:"packing list · header"},
+    {f:"Product", a:inv.product, b:pl.product, ok:norm(inv.product)===norm(pl.product),
+     pa:"invoice · line 1", pb:"packing list · line 1"},
+    {f:"Quantity", a:`${inv.quantity} units`, b:`${pl.quantity} units`, ok:Number(inv.quantity)===Number(pl.quantity),
+     pa:"invoice · total quantity", pb:"packing list · total quantity"},
+    {f:"Invoice value", a:`USD ${Number(inv.value).toFixed(2)}`, b:"—", ok:true,
+     pa:"invoice · total", pb:"not carried on this document"},
+    {f:"Packages", a:"—", b:`${pl.packages}`, ok:true,
+     pa:"not carried on this document", pb:"packing list · total packages"},
+    {f:"Document reference", a:inv.invoice_number, b:pl.packing_list_number,
+     ok:String(inv.invoice_number).replace(/^INV/i,"")===String(pl.packing_list_number).replace(/^PL/i,""),
+     pa:"invoice · header", pb:"packing list · header"}
+  ];
+}
+
+function renderCases(){
+  $("#cases").innerHTML=Object.entries(DEMO).map(([k,c])=>`
+    <button class="case" data-k="${k}" aria-pressed="${k===active}">
+      <div class="cid">${c.case_id}</div>
+      <div class="cname">${c.label}</div>
+      <div class="cdesc">${c.blurb}</div>
+    </button>`).join("");
+  $("#cases").querySelectorAll(".case").forEach(b=>b.onclick=()=>{
+    if(running)return; active=b.dataset.k; renderCases(); renderDocs(); resetStage();
+  });
+}
+function renderDocs(){
+  const c=DEMO[active];
+  $("#docs").innerHTML=[
+    {n:"Commercial invoice", m:`${c.invoice.invoice_number} · ${c.files[0]}`},
+    {n:"Packing list", m:`${c.packing_list.packing_list_number} · ${c.files[1]}`}
+  ].map(d=>`<div class="doc"><div class="ic"></div><div><div class="dn">${d.n}</div><div class="dm">${d.m}</div></div></div>`).join("");
+}
+function renderSteps(){
+  $("#steps").innerHTML=STAGES.map(s=>`
+    <div class="step" data-n="${s.n}"><div class="fill"></div>
+      <div class="node">${s.n}</div><div class="lbl">${s.lbl}</div><span class="sub">${s.sub}</span>
+    </div>`).join("");
+}
+function resetStage(){
+  renderSteps();
+  $("#out").innerHTML=`<div class="empty"><h3>No case processed yet</h3>
+    <p>Pick a case on the left and run pre-clearance. Each stage writes its findings here as it completes, and the officer decision stays open until you close it.</p></div>`;
+}
+function panel(num,title,tag,body){
+  const d=document.createElement("section");
+  d.className="panel";
+  d.innerHTML=`<div class="p-head"><span class="p-num">${num}</span><h3>${title}</h3><span class="tag">${tag}</span></div><div class="p-body">${body}</div>`;
+  $("#out").appendChild(d); d.scrollIntoView({behavior:"smooth",block:"nearest"}); return d;
+}
+function setStep(n){
+  $("#steps").querySelectorAll(".step").forEach(s=>{
+    const i=+s.dataset.n;
+    s.classList.toggle("done",i<n);
+    s.classList.remove("active","hold");
+    if(i===n)s.classList.add("active");
+  });
+}
+function markDone(n,hold){
+  const s=$(`#steps .step[data-n="${n}"]`);
+  s.classList.remove("active"); s.classList.add(hold?"hold":"done");
+}
+const findRow=f=>`<div class="find"><div class="badge-sq ${f.k==="ok"?"sq-ok":f.k==="warn"?"sq-warn":"sq-info"}">${f.k==="ok"?"✓":f.k==="warn"?"!":"i"}</div>
+  <div><div class="ft">${f.t}</div><div class="fd">${f.d}</div></div></div>`;
+
+async function run(){
+  if(running)return; running=true;
+  $("#run").disabled=true; $("#run").textContent="Processing…";
+  $("#out").innerHTML=""; renderSteps();
+
+  const c = await loadCase(active);
+  const inv=c.invoice, pl=c.packing_list, v=c.verdict;
+  const rows=compare(inv,pl);
+  const conflicts=rows.filter(r=>!r.ok);
+  const green = v.verdict==="GREEN";
+
+  // 1 — extraction
+  setStep(1); await wait(1100);
+  panel(1,"Extraction","gemini vision",
+    `<div class="hint">Each document is read by the vision model and returned as structured JSON. Nothing is inferred that a document does not state.</div>
+     <div class="find"><div class="badge-sq sq-ok">✓</div><div><div class="ft">Commercial invoice read</div>
+       <div class="fd"><code>${c.files[0]}</code> — 6 fields returned.</div></div></div>
+     <div class="find"><div class="badge-sq sq-ok">✓</div><div><div class="ft">Packing list read</div>
+       <div class="fd"><code>${c.files[1]}</code> — 6 fields returned.</div></div></div>`);
+  markDone(1);
+
+  // 2 — structured evidence
+  setStep(2); await wait(950);
+  panel(2,"Structured evidence","field → source document",
+    `<div class="hint">Every value below is traceable to the document it came from. Provenance is what makes the decision auditable.</div>
+     <table class="ev"><thead><tr><th style="width:22%">Field</th><th style="width:39%">Commercial invoice</th><th style="width:39%">Packing list</th></tr></thead><tbody>
+     ${rows.map(f=>`<tr><td class="f">${f.f}</td>
+       <td><span class="v">${f.a}</span><span class="prov">${f.pa}</span></td>
+       <td><span class="v">${f.b}</span><span class="prov">${f.pb}</span></td></tr>`).join("")}
+     </tbody></table>`);
+  markDone(2);
+
+  // 3 — reconciliation
+  setStep(3); await wait(1150);
+  const findings = conflicts.length===0
+    ? [{t:"All shared fields agree",d:"Exporter, product, quantity and document reference match across both documents.",k:"ok"},
+       {t:"No evidence gaps",d:"Every field the consistency check requires is present on at least one document.",k:"ok"}]
+    : conflicts.map(f=>({t:`${f.f} conflict`,
+        d:`Invoice states <code>${f.a}</code>. Packing list states <code>${f.b}</code>. The consignment cannot be both.`,k:"warn"}))
+        .concat([{t:"Packing list is internally consistent",
+        d:`${pl.quantity} units across ${pl.packages} packages is ${(pl.quantity/pl.packages)} per package — the document does not contradict itself. The conflict only appears when it is compared against the invoice.`,k:"info"}]);
+  panel(3,"Cross-document reconciliation",`${conflicts.length} conflict${conflicts.length===1?"":"s"}`,
+    `<div class="hint">Shared fields are compared across documents. A document can be internally consistent and still fail here.</div>
+     ${findings.map(findRow).join("")}`);
+  document.querySelectorAll(".ev tbody tr").forEach((tr,i)=>tr.classList.add(rows[i].ok?"agree":"clash"));
+  markDone(3);
+
+  // 4 — rule engine
+  setStep(4); await wait(1000);
+  panel(4,"Rules-of-origin engine",v.rule_applied,
+    `<div class="hint">Deterministic code, not a model. The same inputs always produce the same result.</div>
+     <div class="find"><div class="badge-sq ${v.rule_satisfied?"sq-ok":"sq-warn"}">${v.rule_satisfied?"✓":"!"}</div>
+       <div><div class="ft">${v.rule_satisfied?"Rule satisfied":"Rule not satisfied"}</div>
+       <div class="fd">${v.rule_satisfied
+         ? "The submitted evidence supports the declaration on every field the rule tests."
+         : "The rule cannot be certified against evidence that contradicts itself. Resolve the conflicts above before relying on this result."}</div></div></div>`);
+  markDone(4);
+
+  // 5 — risk
+  setStep(5); await wait(900);
+  panel(5,"Risk banding",green?"band low":"band medium",
+    `<div class="hint">Prototype banding: derived directly from reconciliation output. A calibrated anomaly model replaces this in the full build.</div>
+     ${findRow(green
+       ? {t:"No reconciliation conflicts",d:"Risk band set to <code>LOW</code>.",k:"ok"}
+       : {t:`${conflicts.length} unresolved conflicts`,d:"Risk band set to <code>MEDIUM</code>. The case cannot take the streamlined path.",k:"warn"})}`);
+  markDone(5);
+
+  // 6 — autonomy gate
+  setStep(6); await wait(1200);
+  panel(6,"Autonomy gate",green?"streamlined":"withheld",
+    `<div class="find"><div class="badge-sq ${green?"sq-ok":"sq-warn"}">${green?"✓":"!"}</div>
+      <div><div class="ft">${green?"Streamlined routing permitted":"Streamlined routing withheld"}</div>
+      <div class="fd">${green
+        ? "Policy permits streamlined routing: evidence complete, rule satisfied, risk band LOW."
+        : "Policy blocks auto-clearance while any reconciliation conflict is open. The case is routed to an officer."}</div></div></div>`);
+  markDone(6,!green);
+
+  // 7 — officer
+  setStep(7); await wait(700);
+  const acts = green
+    ? ["Approve and issue","Open full evidence file","Escalate anyway"]
+    : ["Request correction from exporter","Open full evidence file","Approve with officer note","Escalate to expert review"];
+  const logLines=[
+    ["Extraction",`invoice ${inv.invoice_number} read · 6 fields`],
+    ["Extraction",`packing list ${pl.packing_list_number} read · 6 fields`],
+    ["Structured evidence",`${rows.length} fields bound to source document`],
+    ["Reconciliation",`${rows.length} fields compared · ${conflicts.length} conflicts`],
+    ["Rule engine",`${v.rule_applied} · ${v.rule_satisfied?"SATISFIED":"NOT SATISFIED"}`],
+    ["Risk engine",`band ${green?"LOW":"MEDIUM"} · derived from ${conflicts.length} conflicts`],
+    ["Autonomy gate",green?"streamlined routing permitted":"streamlined routing WITHHELD"],
+    ["Officer","awaiting decision"]
+  ];
+  const p=panel(7,"Officer decision","human-in-the-loop",`
+    <div class="verdict ${green?"v-green":"v-amber"}" style="margin:-16px -18px 16px">
+      <span class="v-mark">${v.verdict}</span>
+      <div><h4 class="v-title">${green?"Green — streamlined review":"Yellow — correction required"}</h4>
+      <div class="v-reason">${v.reason}</div></div>
+    </div>
+    <p class="hint">CoO-PILOT does not issue certificates. It prepares the case; the officer decides, and every action is written to the audit trail.</p>
+    <div class="acts">${acts.map((a,i)=>`<button class="act${i===0?" primary":""}">${a}</button>`).join("")}</div>
+    <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--rule)">
+      <div class="eyebrow" style="margin-bottom:8px">Audit trail</div>
+      <div class="log">${logLines.map((l,i)=>
+        `<div><span class="ts">${new Date(Date.now()-(logLines.length-i)*1400).toLocaleTimeString('en-GB')}</span>
+         <span class="st">${l[0]}</span><span>${l[1]}</span></div>`).join("")}</div>
+    </div>`);
+  p.querySelectorAll(".act").forEach(b=>b.onclick=()=>{
+    const log=p.querySelector(".log");
+    log.insertAdjacentHTML("beforeend",
+      `<div><span class="ts">${new Date().toLocaleTimeString('en-GB')}</span><span class="st">Officer</span><span>${b.textContent} · recorded, case closed</span></div>`);
+    log.scrollTop=log.scrollHeight;
+    p.querySelector(".p-head .tag").textContent="decision recorded";
+  });
+  $("#steps .step[data-n='7'] .node").textContent="✓";
+  markDone(7);
+
+  $("#run").disabled=false; $("#run").textContent="Run pre-clearance"; running=false;
+}
+
+async function probe(){
+  try{
+    const ctl=new AbortController(); setTimeout(()=>ctl.abort(),1200);
+    const r=await fetch(`${API_BASE}/health`,{signal:ctl.signal});
+    backendUp=r.ok;
+  }catch(e){ backendUp=false; }
+  $("#beDot").classList.toggle("on",backendUp);
+  $("#beText").textContent=backendUp?"FastAPI · localhost:8000":"Recorded case data";
+}
+
+renderCases(); renderDocs(); renderSteps(); probe();
+$("#run").onclick=run;
+</script>
+</body>
+</html>
