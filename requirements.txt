@@ -1,0 +1,14 @@
+# Backend (Person 3)
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.7
+python-dotenv>=1.0
+python-multipart>=0.0.9
+supabase>=2.5
+
+# Extraction (Person 1) - the backend pipeline calls this module
+google-genai>=0.3
+
+# Tests
+pytest>=8.0
+httpx>=0.27
