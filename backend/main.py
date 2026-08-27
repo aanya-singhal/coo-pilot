@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import get_settings
 from backend.models import HealthResponse, RootResponse
-from backend.routes import claims, documents, pipeline
+from backend.routes import claims, console, documents, pipeline
 
 logging.basicConfig(level=logging.INFO)
 
@@ -41,6 +41,7 @@ app.add_middleware(
 app.include_router(claims.router)
 app.include_router(documents.router)
 app.include_router(pipeline.router)
+app.include_router(console.router)
 
 
 @app.get("/", response_model=RootResponse, tags=["meta"])
