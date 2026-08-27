@@ -75,7 +75,16 @@ def process_claim(db: Database, storage: Storage, claim_id: str) -> dict[str, An
 
     try:
         extraction = _extract_all(db, storage, claim_id, documents)
-        rules_result = run_rules(extraction)
+
+        # The rules engine needs a cost statement to evaluate origin; the
+        # documents alone cannot supply one. Absent, the engine reports
+        # insufficient data rather than guessing.
+        declaration_row = db.get_origin_declaration(claim_id)
+        rules_payload = dict(extraction)
+        if declaration_row:
+            rules_payload["origin_declaration"] = declaration_row["declaration"]
+
+        rules_result = run_rules(rules_payload)
     except Exception as exc:
         logger.exception("Pipeline failed for claim %s", claim_id)
         claims_service.set_status(db, claim_id, ClaimStatus.FAILED)

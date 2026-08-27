@@ -43,6 +43,17 @@ create table if not exists extracted_data (
 
 create index if not exists extracted_data_claim_id_idx on extracted_data (claim_id);
 
+-- Cost statement backing a preferential claim (CAROTAR 2020 Form I): FOB
+-- value plus the value and HS code of each non-originating material. The
+-- rules engine needs this to evaluate origin; documents alone cannot supply
+-- it. One per claim - setting it again replaces the previous.
+create table if not exists origin_declarations (
+    id           uuid primary key default gen_random_uuid(),
+    claim_id     uuid not null unique references claims(id) on delete cascade,
+    declaration  jsonb not null default '{}'::jsonb,
+    created_at   timestamptz not null default now()
+);
+
 -- The combined pipeline result: extraction + reconciliation + rules + risk.
 create table if not exists verification_results (
     id          uuid primary key default gen_random_uuid(),

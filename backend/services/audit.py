@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 CLAIM_CREATED: Final = "claim_created"
 DOCUMENT_UPLOADED: Final = "document_uploaded"
+ORIGIN_DECLARATION_SET: Final = "origin_declaration_set"
 PROCESSING_STARTED: Final = "processing_started"
 PROCESSING_COMPLETED: Final = "processing_completed"
 PROCESSING_FAILED: Final = "processing_failed"

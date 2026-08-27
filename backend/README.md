@@ -45,6 +45,8 @@ It creates `claims`, `documents`, `extracted_data`, `verification_results`,
 | GET | `/claims/{claim_id}` | Get one claim |
 | POST | `/claims/{claim_id}/documents` | Upload a PDF/PNG/JPG/JPEG |
 | GET | `/claims/{claim_id}/documents` | List a claim's documents |
+| PUT | `/claims/{claim_id}/origin-declaration` | Attach the cost statement |
+| GET | `/claims/{claim_id}/origin-declaration` | Read it back |
 | POST | `/claims/{claim_id}/process` | Run the pipeline |
 | GET | `/claims/{claim_id}/result` | Full result for the dashboard |
 | GET | `/claims/{claim_id}/audit` | Audit trail |
@@ -61,6 +63,15 @@ curl -X POST localhost:8000/claims/$CLAIM/documents \
 
 curl -X POST localhost:8000/claims/$CLAIM/documents \
   -F file=@packing_list.png -F doc_type=packing_list
+
+# Origin cannot be established from the documents alone - supply the cost
+# statement (CAROTAR 2020 Form I) or the engine reports INSUFFICIENT_DATA.
+curl -X PUT localhost:8000/claims/$CLAIM/origin-declaration \
+  -H 'Content-Type: application/json' -d '{
+    "agreement":"AIFTA","hs_code":"630231","fob_value":4200.00,
+    "non_originating_materials":[
+      {"description":"Greige cotton fabric","hs_code":"520811","value":1500.00}
+    ]}'
 
 curl -X POST localhost:8000/claims/$CLAIM/process
 curl -s localhost:8000/claims/$CLAIM/result | jq

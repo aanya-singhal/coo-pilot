@@ -78,6 +78,15 @@ class Database(ABC):
     @abstractmethod
     def list_extracted_data(self, claim_id: str) -> list[Row]: ...
 
+    # --- origin declaration (cost statement, CAROTAR 2020 Form I) -----
+    @abstractmethod
+    def save_origin_declaration(
+        self, *, claim_id: str, declaration: dict[str, Any]
+    ) -> Row: ...
+
+    @abstractmethod
+    def get_origin_declaration(self, claim_id: str) -> Row | None: ...
+
     # --- verification results (owned by Person 2's module) ------------
     @abstractmethod
     def save_verification_result(
@@ -104,6 +113,7 @@ class InMemoryDatabase(Database):
         self.claims: dict[str, Row] = {}
         self.documents: dict[str, Row] = {}
         self.extracted: list[Row] = []
+        self.declarations: dict[str, Row] = {}
         self.verifications: dict[str, Row] = {}
         self.audit: list[Row] = []
 
@@ -187,6 +197,23 @@ class InMemoryDatabase(Database):
 
     def list_extracted_data(self, claim_id: str) -> list[Row]:
         return [dict(r) for r in self.extracted if r["claim_id"] == claim_id]
+
+    # --- origin declaration -------------------------------------------
+    def save_origin_declaration(
+        self, *, claim_id: str, declaration: dict[str, Any]
+    ) -> Row:
+        row: Row = {
+            "id": _new_id(),
+            "claim_id": claim_id,
+            "declaration": declaration,
+            "created_at": _now(),
+        }
+        self.declarations[claim_id] = row
+        return dict(row)
+
+    def get_origin_declaration(self, claim_id: str) -> Row | None:
+        row = self.declarations.get(claim_id)
+        return dict(row) if row else None
 
     # --- verification -------------------------------------------------
     def save_verification_result(
@@ -336,6 +363,31 @@ class SupabaseDatabase(Database):
             .execute()
         )
         return self._rows(response)
+
+    # --- origin declaration -------------------------------------------
+    def save_origin_declaration(
+        self, *, claim_id: str, declaration: dict[str, Any]
+    ) -> Row:
+        payload = {"claim_id": claim_id, "declaration": declaration}
+        response = (
+            self._client.table("origin_declarations")
+            .upsert(payload, on_conflict="claim_id")
+            .execute()
+        )
+        row = self._one(response)
+        if row is None:
+            raise RuntimeError("Supabase did not return the origin declaration")
+        return row
+
+    def get_origin_declaration(self, claim_id: str) -> Row | None:
+        response = (
+            self._client.table("origin_declarations")
+            .select("*")
+            .eq("claim_id", claim_id)
+            .limit(1)
+            .execute()
+        )
+        return self._one(response)
 
     # --- verification -------------------------------------------------
     def save_verification_result(

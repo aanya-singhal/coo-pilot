@@ -12,6 +12,8 @@ from backend.models import (
     ClaimCreateRequest,
     ClaimResponse,
     ClaimResultResponse,
+    OriginDeclarationRequest,
+    OriginDeclarationResponse,
 )
 from backend.services import audit, claims as claims_service, pipeline
 from backend.services.claims import ClaimNotFoundError
@@ -59,6 +61,41 @@ def get_claim_result(claim_id: str, db: DatabaseDep) -> ClaimResultResponse:
     except ClaimNotFoundError:
         raise HTTPException(status_code=404, detail=f"Claim '{claim_id}' not found")
     return ClaimResultResponse(**result)
+
+
+@router.put(
+    "/{claim_id}/origin-declaration", response_model=OriginDeclarationResponse
+)
+def set_origin_declaration(
+    claim_id: str, payload: OriginDeclarationRequest, db: DatabaseDep
+) -> OriginDeclarationResponse:
+    """Attach the cost statement the rules engine needs to evaluate origin.
+
+    An invoice and a packing list cannot establish origin on their own; the
+    engine needs the FOB value and the value and classification of each
+    non-originating material. Setting this again replaces the previous one.
+    """
+    try:
+        claims_service.get_claim(db, claim_id)
+    except ClaimNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Claim '{claim_id}' not found")
+
+    row = claims_service.set_origin_declaration(
+        db, claim_id, payload.model_dump(mode="json")
+    )
+    return OriginDeclarationResponse(**row)
+
+
+@router.get(
+    "/{claim_id}/origin-declaration", response_model=OriginDeclarationResponse
+)
+def get_origin_declaration(claim_id: str, db: DatabaseDep) -> OriginDeclarationResponse:
+    row = claims_service.get_origin_declaration(db, claim_id)
+    if row is None:
+        raise HTTPException(
+            status_code=404, detail=f"No origin declaration for claim '{claim_id}'"
+        )
+    return OriginDeclarationResponse(**row)
 
 
 @router.get("/{claim_id}/audit", response_model=list[AuditLogResponse])

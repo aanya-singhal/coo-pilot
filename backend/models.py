@@ -51,6 +51,38 @@ class ClaimCreateRequest(BaseModel):
 # --- responses -------------------------------------------------------
 
 
+class NonOriginatingMaterial(BaseModel):
+    """One input the exporter did not originate."""
+
+    description: str | None = Field(default=None, max_length=300)
+    hs_code: str | None = Field(default=None, max_length=20)
+    value: float | None = Field(default=None, ge=0)
+
+
+class OriginDeclarationRequest(BaseModel):
+    """Cost statement backing a preferential claim (CAROTAR 2020 Form I).
+
+    The backend stores this verbatim and hands it to the rules engine; it
+    does not evaluate or validate the criteria itself. ``agreement`` is not
+    checked against a registry here - the rules engine owns which agreements
+    exist.
+    """
+
+    agreement: str = Field(default="AIFTA", max_length=40)
+    hs_code: str | None = Field(default=None, max_length=20)
+    fob_value: float | None = Field(default=None, ge=0)
+    wholly_obtained: bool = False
+    non_originating_materials: list[NonOriginatingMaterial] = Field(
+        default_factory=list, max_length=200
+    )
+
+
+class OriginDeclarationResponse(BaseModel):
+    claim_id: str
+    declaration: dict[str, Any]
+    created_at: str | None = None
+
+
 class ClaimResponse(BaseModel):
     id: str
     reference: str | None = None

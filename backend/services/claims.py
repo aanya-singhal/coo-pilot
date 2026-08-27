@@ -116,5 +116,27 @@ def add_document(
     return document
 
 
+def set_origin_declaration(
+    db: Database, claim_id: str, declaration: dict[str, Any]
+) -> dict[str, Any]:
+    """Store the cost statement backing a preferential claim."""
+    row = db.save_origin_declaration(claim_id=claim_id, declaration=declaration)
+    audit.log_action(
+        db,
+        claim_id=claim_id,
+        action=audit.ORIGIN_DECLARATION_SET,
+        details={
+            "agreement": declaration.get("agreement"),
+            "hs_code": declaration.get("hs_code"),
+            "material_count": len(declaration.get("non_originating_materials") or []),
+        },
+    )
+    return row
+
+
+def get_origin_declaration(db: Database, claim_id: str) -> dict[str, Any] | None:
+    return db.get_origin_declaration(claim_id)
+
+
 def list_documents(db: Database, claim_id: str) -> list[dict[str, Any]]:
     return db.list_documents(claim_id)
