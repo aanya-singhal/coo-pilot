@@ -84,6 +84,9 @@ hr.div{border:0;border-top:1px solid var(--rule);margin:22px 0}
 .p-head{display:flex;align-items:center;gap:10px;padding:11px 18px;border-bottom:1px solid var(--rule);background:var(--wash)}
 .p-num{font-family:var(--mono);font-size:10px;font-weight:600;color:#fff;background:var(--navy);width:18px;height:18px;display:grid;place-items:center;flex:none}
 .p-head h3{font-size:12.5px;font-weight:600;margin:0}
+.evjson{margin:0;padding:14px 16px;max-height:440px;overflow:auto;background:var(--wash);
+  border-top:1px solid var(--rule);font-family:var(--mono);font-size:10.5px;line-height:1.65;
+  color:var(--ink-2);white-space:pre-wrap;word-break:break-word;tab-size:2}
 .p-head .tag{margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);text-align:right}
 .p-body{padding:16px 18px}
 .ev{width:100%;border-collapse:collapse}
@@ -611,11 +614,27 @@ async function run(){
     const label=b.textContent;
 
     if(label==="Open full evidence file"){
-      if(lastSource==="live"){
-        window.open(`${API_BASE}/claims/${res.claim_id}/review`,"_blank","noopener");
-        append(`${esc(label)} · opened <code>/claims/${esc(res.claim_id)}/review</code> on the backend`);
-      }else{
+      if(lastSource!=="live"){
         append(`${esc(label)} · unavailable — this run is showing recorded/offline data, so there is no live claim to open`);
+        return;
+      }
+      const open=document.getElementById("evidenceFile");
+      if(open){ open.remove(); append(`${esc(label)} · closed`); return; }
+      try{
+        const r=await fetch(`${API_BASE}/claims/${res.claim_id}/review`);
+        if(!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data=await r.json();
+        const pane=document.createElement("div");
+        pane.className="panel"; pane.id="evidenceFile";
+        pane.innerHTML=
+          `<div class="p-head"><h3>Full evidence file</h3>`+
+          `<span class="tag">GET /claims/${esc(res.claim_id)}/review</span></div>`+
+          `<pre class="evjson">${esc(JSON.stringify(data,null,2))}</pre>`;
+        p.appendChild(pane);
+        pane.scrollIntoView({behavior:"smooth",block:"nearest"});
+        append(`${esc(label)} · rendered below · click again to close`);
+      }catch(e){
+        append(`${esc(label)} · could not load — ${esc(e.message)}`);
       }
       return;
     }
