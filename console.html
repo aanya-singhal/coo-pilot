@@ -148,6 +148,9 @@ tr.agree .v.mk:after{content:" ✓";color:var(--green);font-weight:600}
   .step:before,.step .fill{display:none}
   .mast-meta{margin-left:0;width:100%}
 }
+@media (max-width:480px){
+  .steps{grid-template-columns:repeat(2,1fr);gap:18px 0}
+}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 :focus-visible{outline:2px solid var(--link);outline-offset:2px}
 </style>
@@ -181,7 +184,7 @@ tr.agree .v.mk:after{content:" ✓";color:var(--green);font-weight:600}
     <label class="toggle"><input type="checkbox" id="sendDecl" checked> Submit declaration with case</label>
     <button class="run" id="run">Run pre-clearance</button>
     <div style="margin-top:12px"><span class="pill"><span class="dot" id="beDot"></span><span id="beText">Checking backend…</span></span></div>
-    <p class="srcnote">Calls <code style="font-family:var(--mono)">POST /process</code> on the FastAPI backend. If it is unreachable, the console replays the rules engine's own recorded output for the same inputs.</p>
+    <p class="srcnote" id="apiNote">Calls <code style="font-family:var(--mono)">POST /process</code> on the FastAPI backend. If it is unreachable, the console replays the rules engine's own recorded output for the same inputs.</p>
   </aside>
 
   <main class="stage">
@@ -205,7 +208,22 @@ tr.agree .v.mk:after{content:" ✓";color:var(--green);font-weight:600}
 /* ══════════════════════════════════════════════════════════════════
    CONFIG
    ══════════════════════════════════════════════════════════════════ */
-const API_BASE = "http://localhost:8000";
+/* Backend origin: ?api=<url> overrides it (and is remembered for next time),
+   so this file can be pointed at a deployed backend without editing source.
+   Falls back to localhost for local development. */
+const API_BASE = (()=>{
+  const fromQuery=new URLSearchParams(location.search).get("api");
+  if(fromQuery){
+    const clean=fromQuery.replace(/\/+$/,"");
+    try{ localStorage.setItem("coo_pilot_api_base",clean); }catch{}
+    return clean;
+  }
+  try{
+    const stored=localStorage.getItem("coo_pilot_api_base");
+    if(stored) return stored;
+  }catch{}
+  return "http://localhost:8000";
+})();
 
 /* What we SEND. Everything rendered comes back from the API. */
 const CASES = {
@@ -306,6 +324,22 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const FIELD_LABEL={exporter:"Exporter",product:"Product",quantity:"Quantity",document_reference:"Document reference"};
 
+/* Turn a FastAPI error body into one readable sentence. `detail` may be a
+   plain string, a validation-error array, or (for /process) the
+   {message, errors} shape console.py raises on a failed extraction. */
+function parseErrorDetail(text){
+  let detail;
+  try{ detail=JSON.parse(text).detail; }catch{ /* not JSON */ }
+  if(typeof detail==="string") return detail;
+  if(Array.isArray(detail)) return detail.map(d=>d.msg||JSON.stringify(d)).join("; ");
+  if(detail&&typeof detail==="object"){
+    const errs=detail.errors&&typeof detail.errors==="object"
+      ?Object.entries(detail.errors).map(([k,v])=>`${k}: ${v}`).join("; "):"";
+    return [detail.message,errs].filter(Boolean).join(" — ")||JSON.stringify(detail);
+  }
+  return text.trim()||"no further detail";
+}
+
 /* ── the single network call ─────────────────────────────────────── */
 async function loadCase(key){
   const c=CASES[key];
@@ -317,9 +351,9 @@ async function loadCase(key){
       const r=await fetch(`${API_BASE}/process`,{
         method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
       if(r.ok){ lastSource="live"; return await r.json(); }
-      const detail=await r.text();
+      const text=await r.text();
       lastSource="error";
-      return Object.assign(structuredClone(FALLBACK[key]),{_error:`Backend returned ${r.status}. ${detail.slice(0,200)}`});
+      return Object.assign(structuredClone(FALLBACK[key]),{_error:`Backend returned ${r.status}: ${parseErrorDetail(text)}`});
     }catch(e){
       lastSource="error";
       return Object.assign(structuredClone(FALLBACK[key]),{_error:`Could not reach the backend: ${e.message}`});
@@ -538,7 +572,14 @@ async function run(){
       <div><h4 class="v-title">${green?"Cleared — ready for sign-off":red?"Rejected — origin criterion failed":"Held — human review required"}</h4>
       <div class="v-reason">${esc(v.reason||"")}</div></div>
     </div>
-    <p class="hint">CoO-PILOT does not issue certificates. It prepares the case; the officer decides, and every action is written to the audit trail.</p>
+    <p class="hint">CoO-PILOT does not issue certificates. It prepares the case; the officer decides. The actions below call the backend's own review endpoints
+      (<code>POST /claims/{id}/approve|reject|request-info</code>) and are written to its audit trail. When this run is showing recorded or offline data there is
+      no live claim to act on, and the log below says so rather than pretending the decision was recorded.</p>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <label for="reviewerName" style="font-size:12px;color:var(--ink-2)">Reviewer</label>
+      <input id="reviewerName" type="text" value="Duty Officer" maxlength="200"
+        style="font:inherit;font-size:12.5px;padding:6px 8px;border:1px solid var(--rule-2);width:170px">
+    </div>
     <div class="acts">${acts.map((a,i)=>`<button class="act${i===0?" primary":""}">${a}</button>`).join("")}</div>
     <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--rule)">
       <div class="eyebrow" style="margin-bottom:8px">Audit trail · claim ${esc(res.claim_id||"—")}</div>
@@ -546,12 +587,65 @@ async function run(){
         `<div><span class="ts">${new Date(Date.now()-(logLines.length-i)*1400).toLocaleTimeString('en-GB')}</span>
          <span class="st">${l[0]}</span><span>${l[1]}</span></div>`).join("")}</div>
     </div>`);
-  p.querySelectorAll(".act").forEach(b=>b.onclick=()=>{
-    const log=p.querySelector(".log");
+
+  /* Disposal actions call the real review endpoints; "Open full evidence
+     file" just opens the read-only review view. Both are honest about it
+     when there is no live claim behind the current run (recorded/offline
+     data, or a backend error) rather than logging a fake "recorded". */
+  const ACTION_ENDPOINT={
+    "Approve and issue":"approve",
+    "Approve with officer note":"approve",
+    "Request correction from exporter":"request-info",
+    "Escalate anyway":"request-info",
+    "Escalate to expert review":"request-info"
+  };
+  const log=p.querySelector(".log");
+  const append=text=>{
     log.insertAdjacentHTML("beforeend",
-      `<div><span class="ts">${new Date().toLocaleTimeString('en-GB')}</span><span class="st">Officer</span><span>${b.textContent} · recorded, case closed</span></div>`);
+      `<div><span class="ts">${new Date().toLocaleTimeString('en-GB')}</span><span class="st">Officer</span><span>${text}</span></div>`);
     log.scrollTop=log.scrollHeight;
-    p.querySelector(".p-head .tag").textContent="decision recorded";
+  };
+  const dispositionBtns=()=>[...p.querySelectorAll(".act")].filter(x=>ACTION_ENDPOINT[x.textContent]);
+
+  p.querySelectorAll(".act").forEach(b=>b.onclick=async()=>{
+    const label=b.textContent;
+
+    if(label==="Open full evidence file"){
+      if(lastSource==="live"){
+        window.open(`${API_BASE}/claims/${res.claim_id}/review`,"_blank","noopener");
+        append(`${esc(label)} · opened <code>/claims/${esc(res.claim_id)}/review</code> on the backend`);
+      }else{
+        append(`${esc(label)} · unavailable — this run is showing recorded/offline data, so there is no live claim to open`);
+      }
+      return;
+    }
+
+    const endpoint=ACTION_ENDPOINT[label];
+    if(!endpoint) return;
+
+    if(lastSource!=="live"){
+      append(`${esc(label)} · not submitted — no live backend claim behind this run, so nothing was written to an audit trail`);
+      return;
+    }
+
+    const reviewer=($("#reviewerName").value||"").trim()||"Duty Officer";
+    dispositionBtns().forEach(x=>x.disabled=true);
+    try{
+      const r=await fetch(`${API_BASE}/claims/${res.claim_id}/${endpoint}`,{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({reviewer,comments:label})});
+      if(!r.ok){
+        append(`${esc(label)} · backend rejected the decision — ${esc(parseErrorDetail(await r.text()))}`);
+        dispositionBtns().forEach(x=>x.disabled=false);
+        return;
+      }
+      const decision=await r.json();
+      append(`${esc(label)} · recorded as <code>${esc(decision.decision)}</code> by ${esc(decision.reviewer)} (decision ${esc(decision.id)}) · case closed`);
+      p.querySelector(".p-head .tag").textContent="decision recorded";
+    }catch(e){
+      append(`${esc(label)} · could not reach the backend — ${esc(e.message)}`);
+      dispositionBtns().forEach(x=>x.disabled=false);
+    }
   });
   $("#steps .step[data-n='7'] .node").textContent="✓";
   markDone(7);
@@ -573,6 +667,7 @@ async function probe(){
 
 renderCases(); renderDocs(); renderDecl(); renderSteps(); probe();
 $("#run").onclick=run;
+$("#apiNote").innerHTML=`Calls <code style="font-family:var(--mono)">POST /process</code> on <code style="font-family:var(--mono)">${esc(API_BASE)}</code>. If it is unreachable, the console replays the rules engine's own recorded output for the same inputs. Point this page at a different backend with <code style="font-family:var(--mono)">?api=https://your-backend</code>.`;
 </script>
 </body>
 </html>
