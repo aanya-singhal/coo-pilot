@@ -1,5 +1,7 @@
 import os
 import json
+import time
+import hashlib
 import mimetypes
 from dotenv import load_dotenv
 from google import genai
@@ -55,15 +57,23 @@ Use a lower confidence score if the text is blurry, ambiguous, partially cut off
 If a field is not present in the document, use null for that field and 0.0 for its confidence.
 """
 
-def extract_document(file_path: str, doc_type: str) -> dict:
+# Simple in-memory cache: same file + same doc_type -> reuse the last result
+# instead of calling Gemini again. Resets when the program restarts.
+_cache = {}
+
+def _file_hash(file_path: str) -> str:
+    with open(file_path, "rb") as f:
+        return hashlib.md5(f.read()).hexdigest()
+
+def extract_document(file_path: str, doc_type: str, max_retries: int = 3) -> dict:
     """
     Extract structured data from a document image or PDF.
     doc_type must be either "invoice" or "packing_list".
-    Returns a dict matching the schema (including per-field confidence scores),
-    or a dict with an "error" key if extraction failed.
+    Retries on transient/rate-limit failures, and caches results so the
+    same file isn't re-sent to Gemini twice during testing or a live demo.
+    Returns a dict matching the schema, or a dict with an "error" key if
+    extraction ultimately failed after retries.
     """
-    # Build the Gemini client only when actually needed, so importing this
-    # module never crashes just because GEMINI_API_KEY isn't set yet.
     try:
         client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
     except Exception as e:
@@ -82,34 +92,47 @@ def extract_document(file_path: str, doc_type: str) -> dict:
     except FileNotFoundError:
         return {"error": f"File not found: {file_path}"}
 
-    # Detect the real mime type from the file extension instead of
-    # hardcoding image/png, so JPG/JPEG/PDF uploads are labelled correctly.
+    # Check cache first
+    cache_key = (_file_hash(file_path), doc_type)
+    if cache_key in _cache:
+        return _cache[cache_key]
+
     mime_type, _ = mimetypes.guess_type(file_path)
     if mime_type is None:
-        mime_type = "image/png"  # fallback default
+        mime_type = "image/png"
 
-    try:
-        response = client.models.generate_content(
-            model="gemini-3.6-flash",
-            contents=[
-                types.Part.from_bytes(data=file_bytes, mime_type=mime_type),
-                prompt,
-            ],
-        )
-    except Exception as e:
-        return {"error": f"Gemini API call failed: {e}"}
+    last_error = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            response = client.models.generate_content(
+                model="gemini-3.6-flash",
+                contents=[
+                    types.Part.from_bytes(data=file_bytes, mime_type=mime_type),
+                    prompt,
+                ],
+            )
+            raw_text = response.text.strip()
+            if raw_text.startswith("```"):
+                raw_text = raw_text.strip("`")
+                raw_text = raw_text.replace("json", "", 1).strip()
 
-    raw_text = response.text.strip()
-    if raw_text.startswith("```"):
-        raw_text = raw_text.strip("`")
-        raw_text = raw_text.replace("json", "", 1).strip()
+            data = json.loads(raw_text)
+            _cache[cache_key] = data  # cache success only
+            return data
 
-    try:
-        data = json.loads(raw_text)
-    except json.JSONDecodeError:
-        return {"error": "Model did not return valid JSON", "raw_output": raw_text}
+        except json.JSONDecodeError:
+            last_error = "Model did not return valid JSON"
+            # Don't retry on bad JSON, retrying won't fix a parsing issue reliably
+            break
 
-    return data
+        except Exception as e:
+            last_error = str(e)
+            if attempt < max_retries:
+                wait_time = 2 * attempt  # 2s, 4s, 6s backoff
+                time.sleep(wait_time)
+                continue
+
+    return {"error": f"Extraction failed after {max_retries} attempts: {last_error}"}
 
 
 # Quick manual test when running this file directly
@@ -119,3 +142,10 @@ if __name__ == "__main__":
 
     result2 = extract_document("packing_list_sloppy.png", "packing_list")
     print(json.dumps(result2, indent=2))
+
+    # Run the same extraction again to prove caching works (should be instant, no API call)
+    print("\n--- Testing cache (should be instant) ---")
+    start = time.time()
+    result3 = extract_document("sample_invoice.png", "invoice")
+    print(f"Took {time.time() - start:.3f}s")
+    print(json.dumps(result3, indent=2))
