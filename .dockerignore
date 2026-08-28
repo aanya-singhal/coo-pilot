@@ -1,7 +1,13 @@
-venv/
+.git/
 .venv/
+venv/
 __pycache__/
-.env
 *.pyc
+.env
 .pytest_cache/
+tests/
+*.png
+*.jpg
+*.jpeg
+*.pdf
 .DS_Store
