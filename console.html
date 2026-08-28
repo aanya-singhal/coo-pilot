@@ -29,7 +29,7 @@ body{font-family:var(--sans);color:var(--ink);background:var(--wash);-webkit-fon
 .mast-meta{margin-left:auto;display:flex;gap:22px;text-align:right}
 .mast-meta div{font-family:var(--mono);font-size:10.5px;color:#A9C0DC;letter-spacing:.04em}
 .mast-meta strong{display:block;font-family:var(--sans);font-size:12px;color:#fff;font-weight:500;letter-spacing:0}
-.shell{display:grid;grid-template-columns:326px minmax(0,1fr);min-height:calc(100vh - 62px)}
+.shell{display:grid;grid-template-columns:340px minmax(0,1fr);min-height:calc(100vh - 62px)}
 .rail{background:var(--paper);border-right:1px solid var(--rule);padding:20px 20px 40px}
 .stage{padding:20px 26px 60px;min-width:0}
 .eyebrow{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
@@ -47,13 +47,17 @@ hr.div{border:0;border-top:1px solid var(--rule);margin:22px 0}
 .doc .ic:before{content:"";position:absolute;inset:6px 5px auto 5px;height:1px;background:var(--rule-2);box-shadow:0 4px 0 var(--rule-2),0 8px 0 var(--rule-2),0 12px 0 var(--rule-2)}
 .doc .dn{font-size:12.5px;font-weight:500}
 .doc .dm{font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+.decl{background:var(--wash);border:1px solid var(--rule);padding:10px 12px;font-family:var(--mono);font-size:10.5px;line-height:1.7;color:var(--ink-2)}
+.decl b{color:var(--ink);font-weight:600}
+.toggle{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);margin-top:10px;cursor:pointer;user-select:none}
+.toggle input{margin:0;cursor:pointer}
 .run{width:100%;margin-top:18px;background:var(--navy);color:#fff;border:0;padding:12px;font:inherit;font-weight:600;font-size:13px;cursor:pointer}
 .run:hover:not(:disabled){background:var(--navy-2)}
 .run:disabled{background:var(--rule-2);cursor:not-allowed}
 .pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--rule-2);padding:3px 8px;color:var(--ink-2);background:var(--wash)}
 .dot{width:6px;height:6px;border-radius:50%;background:var(--ink-3)}
 .dot.on{background:var(--green)}
-.srcnote{margin-top:14px;font-size:11px;color:var(--ink-3);line-height:1.45}
+.srcnote{margin-top:12px;font-size:11px;color:var(--ink-3);line-height:1.45}
 .pipe{background:var(--paper);border:1px solid var(--rule);padding:20px 22px 18px;margin-bottom:18px}
 .pipe-head{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;flex-wrap:wrap}
 .pipe-head h1{font-size:14px;font-weight:600;margin:0}
@@ -80,7 +84,7 @@ hr.div{border:0;border-top:1px solid var(--rule);margin:22px 0}
 .p-head{display:flex;align-items:center;gap:10px;padding:11px 18px;border-bottom:1px solid var(--rule);background:var(--wash)}
 .p-num{font-family:var(--mono);font-size:10px;font-weight:600;color:#fff;background:var(--navy);width:18px;height:18px;display:grid;place-items:center;flex:none}
 .p-head h3{font-size:12.5px;font-weight:600;margin:0}
-.p-head .tag{margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3)}
+.p-head .tag{margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);text-align:right}
 .p-body{padding:16px 18px}
 .ev{width:100%;border-collapse:collapse}
 .ev th{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:0 10px 8px;border-bottom:1px solid var(--rule);font-weight:600}
@@ -91,14 +95,30 @@ hr.div{border:0;border-top:1px solid var(--rule);margin:22px 0}
 .ev .prov{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);display:block;margin-top:2px}
 tr.clash td{background:var(--amber-bg)}
 tr.clash .v{color:var(--amber);font-weight:600}
-tr.agree .v:after{content:" ✓";color:var(--green);font-weight:600}
+tr.advis td{background:#FBFAF4}
+tr.agree .v.mk:after{content:" ✓";color:var(--green);font-weight:600}
+.sev{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 5px;border:1px solid var(--rule-2);color:var(--ink-3);white-space:nowrap}
+.sev.block{border-color:var(--amber);color:var(--amber)}
 .find{display:flex;gap:11px;padding:11px 0;border-bottom:1px dotted var(--rule)}
 .find:last-child{border-bottom:0}
 .badge-sq{width:17px;height:17px;flex:none;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;margin-top:1px}
-.sq-ok{background:var(--green)} .sq-warn{background:var(--amber)} .sq-info{background:var(--link)}
+.sq-ok{background:var(--green)} .sq-warn{background:var(--amber)} .sq-info{background:var(--link)} .sq-bad{background:var(--red)}
 .find .ft{font-size:12.5px;font-weight:600;margin-bottom:2px}
 .find .fd{font-size:12px;color:var(--ink-2);line-height:1.45}
 .find .fd code{font-family:var(--mono);font-size:11.5px;background:var(--wash-2);padding:1px 4px}
+.calc{display:grid;grid-template-columns:1fr auto;gap:6px 18px;font-family:var(--mono);font-size:12px;background:var(--wash);border:1px solid var(--rule);padding:13px 15px;margin:12px 0}
+.calc .lab{color:var(--ink-2)}
+.calc .num{text-align:right;font-weight:500}
+.calc .tot{border-top:1px solid var(--rule-2);padding-top:7px;margin-top:3px;font-weight:600}
+.cite{font-size:11px;color:var(--ink-3);line-height:1.5;border-left:2px solid var(--rule-2);padding-left:10px;margin-top:12px}
+.cite a{color:var(--link)}
+.meter{height:6px;background:var(--wash-2);border:1px solid var(--rule);margin:10px 0 4px;position:relative;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--green);transition:width .6s ease}
+.meter.med i{background:var(--amber)} .meter.high i{background:var(--red)}
+.mrow{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+.fac{display:flex;justify-content:space-between;gap:12px;font-size:12px;padding:7px 0;border-bottom:1px dotted var(--rule)}
+.fac:last-child{border-bottom:0}
+.fac .pts{font-family:var(--mono);font-weight:600;color:var(--amber);flex:none}
 .verdict{border-left:4px solid;padding:16px 18px;display:flex;gap:15px;align-items:flex-start}
 .v-green{background:var(--green-bg);border-color:var(--green)}
 .v-amber{background:var(--amber-bg);border-color:var(--amber)}
@@ -106,8 +126,7 @@ tr.agree .v:after{content:" ✓";color:var(--green);font-weight:600}
 .v-mark{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.1em;padding:5px 11px;color:#fff;flex:none}
 .v-green .v-mark{background:var(--green)} .v-amber .v-mark{background:var(--amber)} .v-red .v-mark{background:var(--red)}
 .v-title{font-size:15px;font-weight:600;margin:0 0 5px}
-.v-reason{font-size:13px;color:var(--ink-2);line-height:1.5;max-width:62ch}
-.v-reason strong{color:var(--ink)}
+.v-reason{font-size:13px;color:var(--ink-2);line-height:1.5;max-width:64ch}
 .acts{display:flex;gap:9px;flex-wrap:wrap;margin-top:4px}
 .act{font:inherit;font-size:12.5px;font-weight:500;padding:9px 15px;border:1px solid var(--rule-2);background:var(--paper);cursor:pointer;transition:.14s}
 .act:hover{border-color:var(--navy);background:var(--wash)}
@@ -116,10 +135,12 @@ tr.agree .v:after{content:" ✓";color:var(--green);font-weight:600}
 .log{font-family:var(--mono);font-size:11px;line-height:1.85;max-height:190px;overflow-y:auto;color:var(--ink-2)}
 .log div{display:flex;gap:12px}
 .log .ts{color:var(--ink-3);flex:none}
-.log .st{color:var(--navy);font-weight:600;flex:none;width:120px}
+.log .st{color:var(--navy);font-weight:600;flex:none;width:124px}
 .empty{background:var(--paper);border:1px dashed var(--rule-2);padding:52px 30px;text-align:center}
 .empty h3{font-size:14px;font-weight:600;margin:0 0 7px}
 .empty p{font-size:12.5px;color:var(--ink-2);margin:0 auto;max-width:46ch;line-height:1.55}
+.err{background:var(--red-bg);border:1px solid #E3B8B8;padding:12px 15px;font-size:12.5px;color:var(--ink-2);margin-bottom:14px}
+.err b{color:var(--red)}
 @media (max-width:940px){
   .shell{grid-template-columns:1fr}
   .rail{border-right:0;border-bottom:1px solid var(--rule)}
@@ -142,7 +163,7 @@ tr.agree .v:after{content:" ✓";color:var(--green);font-weight:600}
   <div class="mast-meta">
     <div>Problem statement<strong>IHSIH024</strong></div>
     <div>Team<strong>Null Pointers</strong></div>
-    <div>Issuing agency<strong>Demo / Sandbox</strong></div>
+    <div>Agreement<strong>AIFTA</strong></div>
   </div>
 </header>
 
@@ -153,12 +174,14 @@ tr.agree .v:after{content:" ✓";color:var(--green);font-weight:600}
     <hr class="div">
     <h2>Documents submitted</h2>
     <div id="docs"></div>
+    <hr class="div">
+    <h2>Origin declaration</h2>
+    <p class="srcnote" style="margin-top:0;margin-bottom:9px">CAROTAR 2020 Form I cost statement. Without it the rules engine cannot evaluate origin, and every case returns PENDING_REVIEW.</p>
+    <div class="decl" id="decl"></div>
+    <label class="toggle"><input type="checkbox" id="sendDecl" checked> Submit declaration with case</label>
     <button class="run" id="run">Run pre-clearance</button>
     <div style="margin-top:12px"><span class="pill"><span class="dot" id="beDot"></span><span id="beText">Checking backend…</span></span></div>
-    <p class="srcnote">Calls <code style="font-family:var(--mono)">POST /process</code> on the local FastAPI service when it is running, and replays the recorded case when it is not.</p>
-    <hr class="div">
-    <h2>Scope of this build</h2>
-    <p class="srcnote">Two document types: commercial invoice and packing list. Two cases: one clean, one requiring correction. Cross-document reconciliation on exporter, product, quantity and document reference.</p>
+    <p class="srcnote">Calls <code style="font-family:var(--mono)">POST /process</code> on the FastAPI backend. If it is unreachable, the console replays the rules engine's own recorded output for the same inputs.</p>
   </aside>
 
   <main class="stage">
@@ -172,124 +195,183 @@ tr.agree .v:after{content:" ✓";color:var(--green);font-weight:600}
     <div id="out">
       <div class="empty">
         <h3>No case processed yet</h3>
-        <p>Pick a case on the left and run pre-clearance. Each stage writes its findings here as it completes, and the officer decision stays open until you close it.</p>
+        <p>Pick a case on the left and run pre-clearance. Every panel below is rendered from the backend's response — nothing on this screen is written in advance.</p>
       </div>
     </div>
   </main>
 </div>
 
 <script>
-/* ═══════════════════════════════════════════════════════════════════
-   CONFIG — the only things you change when the backend goes live
-   ═══════════════════════════════════════════════════════════════════ */
-const API_BASE = "http://localhost:8000";   // Person 3's FastAPI
-const RULE_NAME = "Cross-document consistency (Invoice ↔ Packing List)";
-// ↑ When Person 2's origin rule is ready, change this to their rule name,
-//   e.g. "AIFTA · RVC 35%". The backend's verdict.rule_applied overrides
-//   this whenever the API responds.
+/* ══════════════════════════════════════════════════════════════════
+   CONFIG
+   ══════════════════════════════════════════════════════════════════ */
+const API_BASE = "http://localhost:8000";
 
-/* ═══════════════════════════════════════════════════════════════════
-   DEMO DATA — matches schema.py exactly (InvoiceData / PackingListData / Verdict)
-   Values are the real numbers from the sample PNGs in /extraction
-   ═══════════════════════════════════════════════════════════════════ */
-const DEMO = {
+/* What we SEND. Everything rendered comes back from the API. */
+const CASES = {
   clean:{
-    case_id:"case-clean-01",
-    label:"Clean submission",
+    case_id:"case-clean-01", label:"Clean submission",
     blurb:"Cotton bedsheets, Coimbatore. Documents agree.",
-    files:["sample_invoice.png","packing_list_clean.png"],
-    invoice:{doc_type:"invoice", exporter:"Nilgiri Textiles Pvt Ltd", product:"Cotton Bedsheets (Set)",
-             quantity:500, value:4200.00, invoice_number:"INV-2026-0451"},
-    packing_list:{doc_type:"packing_list", exporter:"Nilgiri Textiles Pvt Ltd", product:"Cotton Bedsheets (Set)",
-             quantity:500, packages:25, packing_list_number:"PL-2026-0451"},
-    verdict:{case_id:"case-clean-01", verdict:"GREEN",
-             reason:"All shared fields agree across both documents. Exporter, product and quantity match, and the packing list reference aligns with the invoice number.",
-             rule_applied:RULE_NAME, rule_satisfied:true}
+    files:["sample_invoice.png","packing_list_clean.png"]
   },
   sloppy:{
-    case_id:"case-sloppy-01",
-    label:"Correction required",
-    blurb:"Same exporter. Quantity and document reference disagree.",
-    files:["sample_invoice.png","packing_list_sloppy.png"],
-    invoice:{doc_type:"invoice", exporter:"Nilgiri Textiles Pvt Ltd", product:"Cotton Bedsheets (Set)",
-             quantity:500, value:4200.00, invoice_number:"INV-2026-0451"},
-    packing_list:{doc_type:"packing_list", exporter:"Nilgiri Textiles Pvt Ltd", product:"Cotton Bedsheets (Set)",
-             quantity:480, packages:24, packing_list_number:"PL-2026-0452"},
-    verdict:{case_id:"case-sloppy-01", verdict:"YELLOW",
-             reason:"Invoice quantity 500 units vs Packing List quantity 480 units — a shortfall of 20 units. The packing list also carries reference PL-2026-0452, which does not correspond to invoice INV-2026-0451.",
-             rule_applied:RULE_NAME, rule_satisfied:false}
+    case_id:"case-sloppy-01", label:"Correction required",
+    blurb:"Same exporter. Quantity and reference disagree.",
+    files:["sample_invoice.png","packing_list_sloppy.png"]
   }
+};
+
+/* Origin declaration sent with the case. Bedsheets are HS 6302.21; the
+   non-originating input is raw cotton yarn at 5205.11, which changes
+   classification at the 6-digit level, so CTSH is satisfied. */
+const DECLARATION = {
+  agreement:"AIFTA",
+  hs_code:"6302.21",
+  fob_value:4200.00,
+  wholly_obtained:false,
+  non_originating_materials:[
+    {description:"Raw cotton yarn (imported)", hs_code:"5205.11", value:2400.00}
+  ]
+};
+
+/* Offline fallback. Not invented data — this is the verbatim output of
+   rules/engine.py run against the same inputs. */
+const FALLBACK = {
+ clean:{
+  case_id:"case-clean-01", claim_id:"local-clean",
+  invoice:{doc_type:"invoice",exporter:"Nilgiri Textiles Pvt Ltd",product:"Cotton Bedsheets (Set)",quantity:500,value:4200.0,invoice_number:"INV-2026-0451"},
+  packing_list:{doc_type:"packing_list",exporter:"Nilgiri Textiles Pvt Ltd",product:"Cotton Bedsheets (Set)",quantity:500,packages:25,packing_list_number:"PL-2026-0451"},
+  verdict:{case_id:"case-clean-01",verdict:"GREEN",decision:"APPROVED",reason:"All compared fields agree across both documents. Regional value content 42.86% against a 35.0% threshold. All non-originating materials change classification at the 6-digit level.",rule_applied:"ASEAN-India Free Trade Agreement: value content ≥ 35.0% of FOB value and CTSH (6-digit HS)",rule_satisfied:true},
+  reconciliation:{status:"EVALUATED",consistent:true,missing_documents:[],comparisons:[
+    {field:"exporter",invoice_value:"Nilgiri Textiles Pvt Ltd",packing_list_value:"Nilgiri Textiles Pvt Ltd",match:true,severity:"blocking",note:"Exporter matches across both documents."},
+    {field:"product",invoice_value:"Cotton Bedsheets (Set)",packing_list_value:"Cotton Bedsheets (Set)",match:true,severity:"blocking",note:"Product description matches."},
+    {field:"quantity",invoice_value:500,packing_list_value:500,match:true,severity:"blocking",note:"Quantities agree."},
+    {field:"document_reference",invoice_value:"INV-2026-0451",packing_list_value:"PL-2026-0451",match:true,severity:"advisory",note:"Document references share a common serial."}],
+   blocking_mismatches:[],advisory_mismatches:[],summary:"All compared fields agree across both documents."},
+  rules:{rule_applied:"ASEAN-India Free Trade Agreement: value content ≥ 35.0% of FOB value and CTSH (6-digit HS)",rule_satisfied:true,
+   reason:"All compared fields agree across both documents. Regional value content 42.86% against a 35.0% threshold. All non-originating materials change classification at the 6-digit level.",
+   origin:{status:"EVALUATED",satisfied:true,agreement:"AIFTA",
+    criterion:"ASEAN-India Free Trade Agreement: value content ≥ 35.0% of FOB value and CTSH (6-digit HS)",
+    citation:"AIFTA Rules of Origin, Rule 4 (general rule): AIFTA content not less than 35% of FOB value AND change in tariff sub-heading at the 6-digit HS level. Given effect in India by Notification 189/2009-Cus (NT), 31.12.2009.",
+    source_url:"https://fta.miti.gov.my/index.php/pages/view/asean-india",
+    value_content:{method:"indirect (build-down)",regional_value_content_percent:42.86,threshold_percent:35.0,non_originating_value:2400.0,fob_value:4200.0,satisfied:true,materials_without_declared_value:[],note:"Regional value content 42.86% against a 35.0% threshold."},
+    ctc:{rule:"CTSH",digits:6,product_hs_prefix:"630221",satisfied:true,failures:[],materials_without_hs_code:[],note:"All non-originating materials change classification at the 6-digit level."},
+    detail:"Regional value content 42.86% against a 35.0% threshold. All non-originating materials change classification at the 6-digit level."},
+   citation:"AIFTA Rules of Origin, Rule 4 (general rule): AIFTA content not less than 35% of FOB value AND change in tariff sub-heading at the 6-digit HS level. Given effect in India by Notification 189/2009-Cus (NT), 31.12.2009.",
+   source_url:"https://fta.miti.gov.my/index.php/pages/view/asean-india"},
+  risk:{score:0,band:"LOW",factors:[],basis:"Internal triage score. Weights are a policy choice of this tool, not a statutory measure."}
+ },
+ sloppy:{
+  case_id:"case-sloppy-01", claim_id:"local-sloppy",
+  invoice:{doc_type:"invoice",exporter:"Nilgiri Textiles Pvt Ltd",product:"Cotton Bedsheets (Set)",quantity:500,value:4200.0,invoice_number:"INV-2026-0451"},
+  packing_list:{doc_type:"packing_list",exporter:"Nilgiri Textiles Pvt Ltd",product:"Cotton Bedsheets (Set)",quantity:480,packages:24,packing_list_number:"PL-2026-0452"},
+  verdict:{case_id:"case-sloppy-01",verdict:"YELLOW",decision:"PENDING_REVIEW",reason:"1 field(s) disagree across the documents: quantity.",rule_applied:"ASEAN-India Free Trade Agreement: value content ≥ 35.0% of FOB value and CTSH (6-digit HS)",rule_satisfied:false},
+  reconciliation:{status:"EVALUATED",consistent:false,missing_documents:[],comparisons:[
+    {field:"exporter",invoice_value:"Nilgiri Textiles Pvt Ltd",packing_list_value:"Nilgiri Textiles Pvt Ltd",match:true,severity:"blocking",note:"Exporter matches across both documents."},
+    {field:"product",invoice_value:"Cotton Bedsheets (Set)",packing_list_value:"Cotton Bedsheets (Set)",match:true,severity:"blocking",note:"Product description matches."},
+    {field:"quantity",invoice_value:500,packing_list_value:480,match:false,severity:"blocking",note:"Invoice states 500 against packing list 480 — a difference of 20."},
+    {field:"document_reference",invoice_value:"INV-2026-0451",packing_list_value:"PL-2026-0452",match:false,severity:"advisory",note:"Packing list reference 'PL-2026-0452' does not correspond to invoice 'INV-2026-0451'. This is a filing convention, not an origin criterion."}],
+   blocking_mismatches:["quantity"],advisory_mismatches:["document_reference"],summary:"1 field(s) disagree across the documents: quantity."},
+  rules:{rule_applied:"ASEAN-India Free Trade Agreement: value content ≥ 35.0% of FOB value and CTSH (6-digit HS)",rule_satisfied:false,
+   reason:"1 field(s) disagree across the documents: quantity.",
+   origin:{status:"EVALUATED",satisfied:true,agreement:"AIFTA",
+    criterion:"ASEAN-India Free Trade Agreement: value content ≥ 35.0% of FOB value and CTSH (6-digit HS)",
+    citation:"AIFTA Rules of Origin, Rule 4 (general rule): AIFTA content not less than 35% of FOB value AND change in tariff sub-heading at the 6-digit HS level. Given effect in India by Notification 189/2009-Cus (NT), 31.12.2009.",
+    source_url:"https://fta.miti.gov.my/index.php/pages/view/asean-india",
+    value_content:{method:"indirect (build-down)",regional_value_content_percent:42.86,threshold_percent:35.0,non_originating_value:2400.0,fob_value:4200.0,satisfied:true,materials_without_declared_value:[],note:"Regional value content 42.86% against a 35.0% threshold."},
+    ctc:{rule:"CTSH",digits:6,product_hs_prefix:"630221",satisfied:true,failures:[],materials_without_hs_code:[],note:"All non-originating materials change classification at the 6-digit level."},
+    detail:"Regional value content 42.86% against a 35.0% threshold. All non-originating materials change classification at the 6-digit level."},
+   citation:"AIFTA Rules of Origin, Rule 4 (general rule): AIFTA content not less than 35% of FOB value AND change in tariff sub-heading at the 6-digit HS level. Given effect in India by Notification 189/2009-Cus (NT), 31.12.2009.",
+   source_url:"https://fta.miti.gov.my/index.php/pages/view/asean-india"},
+  risk:{score:40,band:"MEDIUM",factors:[
+    {factor:"blocking_mismatch",points:30,detail:"'quantity' disagrees across the documents"},
+    {factor:"advisory_mismatch",points:10,detail:"'document_reference' is inconsistent (advisory)"}],
+   basis:"Internal triage score. Weights are a policy choice of this tool, not a statutory measure."}
+ }
 };
 
 const STAGES=[
   {n:1,lbl:"Multimodal AI",sub:"ocr · vision"},
   {n:2,lbl:"Structured evidence",sub:"field → source"},
   {n:3,lbl:"Reconciliation",sub:"cross-document"},
-  {n:4,lbl:"Rule engine",sub:"origin rule"},
-  {n:5,lbl:"Risk engine",sub:"anomaly · gaps"},
+  {n:4,lbl:"Rules of origin",sub:"AIFTA"},
+  {n:5,lbl:"Risk engine",sub:"triage score"},
   {n:6,lbl:"Autonomy gate",sub:"policy"},
   {n:7,lbl:"Officer",sub:"final decision"}
 ];
 
-let active="clean", running=false, backendUp=false;
+let active="clean", running=false, backendUp=false, lastSource="";
 const $=s=>document.querySelector(s);
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const FIELD_LABEL={exporter:"Exporter",product:"Product",quantity:"Quantity",document_reference:"Document reference"};
 
-/* ── the ONE function to swap when the backend is live ───────────── */
+/* ── the single network call ─────────────────────────────────────── */
 async function loadCase(key){
+  const c=CASES[key];
+  const body={case_id:c.case_id, files:c.files};
+  if($("#sendDecl").checked) body.origin_declaration=DECLARATION;
+
   if(backendUp){
     try{
-      const r = await fetch(`${API_BASE}/process`,{
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({case_id:DEMO[key].case_id, files:DEMO[key].files})
-      });
-      if(r.ok){
-        const data = await r.json();          // expects {invoice, packing_list, verdict}
-        return {...DEMO[key], ...data};       // keep label/blurb, take real data
-      }
-    }catch(e){ console.warn("Backend call failed, using recorded case:", e); }
+      const r=await fetch(`${API_BASE}/process`,{
+        method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+      if(r.ok){ lastSource="live"; return await r.json(); }
+      const detail=await r.text();
+      lastSource="error";
+      return Object.assign(structuredClone(FALLBACK[key]),{_error:`Backend returned ${r.status}. ${detail.slice(0,200)}`});
+    }catch(e){
+      lastSource="error";
+      return Object.assign(structuredClone(FALLBACK[key]),{_error:`Could not reach the backend: ${e.message}`});
+    }
   }
-  return DEMO[key];
+  lastSource="recorded";
+  const fb=structuredClone(FALLBACK[key]);
+  if(!$("#sendDecl").checked) return withoutDeclaration(fb);
+  return fb;
 }
 
-/* ── derive the comparison rows from the two doc objects ─────────── */
-function compare(inv, pl){
-  const norm = s => (s||"").toLowerCase().replace(/[.,]/g,"")
-    .replace(/\b(pvt|private|ltd|limited|llp|inc|co)\b/g,"").replace(/\s+/g," ").trim();
-  return [
-    {f:"Exporter", a:inv.exporter, b:pl.exporter, ok:norm(inv.exporter)===norm(pl.exporter),
-     pa:"invoice · header", pb:"packing list · header"},
-    {f:"Product", a:inv.product, b:pl.product, ok:norm(inv.product)===norm(pl.product),
-     pa:"invoice · line 1", pb:"packing list · line 1"},
-    {f:"Quantity", a:`${inv.quantity} units`, b:`${pl.quantity} units`, ok:Number(inv.quantity)===Number(pl.quantity),
-     pa:"invoice · total quantity", pb:"packing list · total quantity"},
-    {f:"Invoice value", a:`USD ${Number(inv.value).toFixed(2)}`, b:"—", ok:true,
-     pa:"invoice · total", pb:"not carried on this document"},
-    {f:"Packages", a:"—", b:`${pl.packages}`, ok:true,
-     pa:"not carried on this document", pb:"packing list · total packages"},
-    {f:"Document reference", a:inv.invoice_number, b:pl.packing_list_number,
-     ok:String(inv.invoice_number).replace(/^INV/i,"")===String(pl.packing_list_number).replace(/^PL/i,""),
-     pa:"invoice · header", pb:"packing list · header"}
-  ];
+/* Mirrors what rules/engine.py does when no declaration is supplied. */
+function withoutDeclaration(fb){
+  fb.risk={score:25,band:"LOW",
+    factors:[{factor:"origin_insufficient_data",points:25,detail:"Origin criteria could not be evaluated"}],
+    basis:fb.risk.basis};
+  fb.rules.origin={status:"INSUFFICIENT_DATA",satisfied:false,agreement:"AIFTA",
+    criterion:fb.rules.rule_applied,citation:fb.rules.citation,source_url:fb.rules.source_url,
+    missing_fields:["hs_code","fob_value","non_originating_materials"],
+    detail:"No origin declaration was supplied. An invoice and packing list alone cannot establish origin.",
+    required_action:"Obtain the origin cost statement (CAROTAR 2020 Form I) from the importer before a preferential claim can be substantiated."};
+  fb.rules.rule_satisfied=false;
+  fb.verdict.verdict="YELLOW"; fb.verdict.decision="PENDING_REVIEW"; fb.verdict.rule_satisfied=false;
+  fb.verdict.reason = fb.reconciliation.consistent
+    ? "All compared fields agree across both documents. However, origin remains unsubstantiated: No origin declaration was supplied. An invoice and packing list alone cannot establish origin."
+    : fb.reconciliation.summary;
+  fb.rules.reason=fb.verdict.reason;
+  return fb;
 }
 
 function renderCases(){
-  $("#cases").innerHTML=Object.entries(DEMO).map(([k,c])=>`
+  $("#cases").innerHTML=Object.entries(CASES).map(([k,c])=>`
     <button class="case" data-k="${k}" aria-pressed="${k===active}">
-      <div class="cid">${c.case_id}</div>
-      <div class="cname">${c.label}</div>
-      <div class="cdesc">${c.blurb}</div>
-    </button>`).join("");
+      <div class="cid">${c.case_id}</div><div class="cname">${c.label}</div>
+      <div class="cdesc">${c.blurb}</div></button>`).join("");
   $("#cases").querySelectorAll(".case").forEach(b=>b.onclick=()=>{
     if(running)return; active=b.dataset.k; renderCases(); renderDocs(); resetStage();
   });
 }
 function renderDocs(){
-  const c=DEMO[active];
-  $("#docs").innerHTML=[
-    {n:"Commercial invoice", m:`${c.invoice.invoice_number} · ${c.files[0]}`},
-    {n:"Packing list", m:`${c.packing_list.packing_list_number} · ${c.files[1]}`}
-  ].map(d=>`<div class="doc"><div class="ic"></div><div><div class="dn">${d.n}</div><div class="dm">${d.m}</div></div></div>`).join("");
+  $("#docs").innerHTML=CASES[active].files.map(f=>`
+    <div class="doc"><div class="ic"></div><div>
+      <div class="dn">${f.includes("packing")?"Packing list":"Commercial invoice"}</div>
+      <div class="dm">${f}</div></div></div>`).join("");
+}
+function renderDecl(){
+  const d=DECLARATION, m=d.non_originating_materials[0];
+  $("#decl").innerHTML=`
+    <div>Agreement · <b>${d.agreement}</b></div>
+    <div>Product HS · <b>${d.hs_code}</b></div>
+    <div>FOB value · <b>USD ${d.fob_value.toFixed(2)}</b></div>
+    <div>Non-originating · <b>USD ${m.value.toFixed(2)}</b> (${m.hs_code})</div>`;
 }
 function renderSteps(){
   $("#steps").innerHTML=STAGES.map(s=>`
@@ -300,131 +382,166 @@ function renderSteps(){
 function resetStage(){
   renderSteps();
   $("#out").innerHTML=`<div class="empty"><h3>No case processed yet</h3>
-    <p>Pick a case on the left and run pre-clearance. Each stage writes its findings here as it completes, and the officer decision stays open until you close it.</p></div>`;
+    <p>Pick a case on the left and run pre-clearance. Every panel below is rendered from the backend's response — nothing on this screen is written in advance.</p></div>`;
 }
 function panel(num,title,tag,body){
-  const d=document.createElement("section");
-  d.className="panel";
+  const d=document.createElement("section"); d.className="panel";
   d.innerHTML=`<div class="p-head"><span class="p-num">${num}</span><h3>${title}</h3><span class="tag">${tag}</span></div><div class="p-body">${body}</div>`;
   $("#out").appendChild(d); d.scrollIntoView({behavior:"smooth",block:"nearest"}); return d;
 }
 function setStep(n){
   $("#steps").querySelectorAll(".step").forEach(s=>{
-    const i=+s.dataset.n;
-    s.classList.toggle("done",i<n);
-    s.classList.remove("active","hold");
-    if(i===n)s.classList.add("active");
+    const i=+s.dataset.n; s.classList.toggle("done",i<n);
+    s.classList.remove("active","hold"); if(i===n)s.classList.add("active");
   });
 }
 function markDone(n,hold){
-  const s=$(`#steps .step[data-n="${n}"]`);
-  s.classList.remove("active"); s.classList.add(hold?"hold":"done");
+  const s=$(`#steps .step[data-n="${n}"]`); s.classList.remove("active");
+  s.classList.add(hold?"hold":"done");
 }
-const findRow=f=>`<div class="find"><div class="badge-sq ${f.k==="ok"?"sq-ok":f.k==="warn"?"sq-warn":"sq-info"}">${f.k==="ok"?"✓":f.k==="warn"?"!":"i"}</div>
-  <div><div class="ft">${f.t}</div><div class="fd">${f.d}</div></div></div>`;
+const findRow=(k,t,d)=>`<div class="find"><div class="badge-sq ${k}">${
+  k==="sq-ok"?"✓":k==="sq-bad"?"×":k==="sq-warn"?"!":"i"}</div>
+  <div><div class="ft">${t}</div><div class="fd">${d}</div></div></div>`;
 
 async function run(){
   if(running)return; running=true;
   $("#run").disabled=true; $("#run").textContent="Processing…";
   $("#out").innerHTML=""; renderSteps();
 
-  const c = await loadCase(active);
-  const inv=c.invoice, pl=c.packing_list, v=c.verdict;
-  const rows=compare(inv,pl);
-  const conflicts=rows.filter(r=>!r.ok);
-  const green = v.verdict==="GREEN";
+  setStep(1);
+  const res = await loadCase(active);            // the real network call
+  const inv=res.invoice||{}, pl=res.packing_list||{}, v=res.verdict||{};
+  const rec=res.reconciliation||{}, rules=res.rules||{}, origin=rules.origin||{}, risk=res.risk||{};
+  const comparisons=rec.comparisons||[];
+  const colour=v.verdict||"YELLOW";
+  const green=colour==="GREEN", red=colour==="RED";
 
-  // 1 — extraction
-  setStep(1); await wait(1100);
-  panel(1,"Extraction","gemini vision",
+  if(res._error){
+    $("#out").insertAdjacentHTML("afterbegin",
+      `<div class="err"><b>Backend unavailable.</b> ${esc(res._error)} Showing the rules engine's recorded output for the same inputs.</div>`);
+  }
+
+  await wait(900);
+  panel(1,"Extraction", lastSource==="live"?"gemini vision · live":"recorded run",
     `<div class="hint">Each document is read by the vision model and returned as structured JSON. Nothing is inferred that a document does not state.</div>
-     <div class="find"><div class="badge-sq sq-ok">✓</div><div><div class="ft">Commercial invoice read</div>
-       <div class="fd"><code>${c.files[0]}</code> — 6 fields returned.</div></div></div>
-     <div class="find"><div class="badge-sq sq-ok">✓</div><div><div class="ft">Packing list read</div>
-       <div class="fd"><code>${c.files[1]}</code> — 6 fields returned.</div></div></div>`);
+     ${findRow("sq-ok","Commercial invoice read",
+       `<code>${esc(CASES[active].files[0])}</code> — ${Object.keys(inv).length} fields returned.`)}
+     ${findRow("sq-ok","Packing list read",
+       `<code>${esc(CASES[active].files[1])}</code> — ${Object.keys(pl).length} fields returned.`)}`);
   markDone(1);
 
-  // 2 — structured evidence
-  setStep(2); await wait(950);
+  setStep(2); await wait(800);
+  const evRows=[
+    {f:"Exporter",a:inv.exporter,b:pl.exporter,pa:"invoice · header",pb:"packing list · header"},
+    {f:"Product",a:inv.product,b:pl.product,pa:"invoice · line 1",pb:"packing list · line 1"},
+    {f:"Quantity",a:inv.quantity!=null?`${inv.quantity} units`:null,b:pl.quantity!=null?`${pl.quantity} units`:null,pa:"invoice · total quantity",pb:"packing list · total quantity"},
+    {f:"Invoice value",a:inv.value!=null?`USD ${Number(inv.value).toFixed(2)}`:null,b:"—",pa:"invoice · total",pb:"not carried on this document"},
+    {f:"Packages",a:"—",b:pl.packages!=null?String(pl.packages):null,pa:"not carried on this document",pb:"packing list · total packages"},
+    {f:"Document reference",a:inv.invoice_number,b:pl.packing_list_number,pa:"invoice · header",pb:"packing list · header"}
+  ];
   panel(2,"Structured evidence","field → source document",
     `<div class="hint">Every value below is traceable to the document it came from. Provenance is what makes the decision auditable.</div>
      <table class="ev"><thead><tr><th style="width:22%">Field</th><th style="width:39%">Commercial invoice</th><th style="width:39%">Packing list</th></tr></thead><tbody>
-     ${rows.map(f=>`<tr><td class="f">${f.f}</td>
-       <td><span class="v">${f.a}</span><span class="prov">${f.pa}</span></td>
-       <td><span class="v">${f.b}</span><span class="prov">${f.pb}</span></td></tr>`).join("")}
+     ${evRows.map(r=>`<tr><td class="f">${r.f}</td>
+       <td><span class="v">${esc(r.a??"—")}</span><span class="prov">${r.pa}</span></td>
+       <td><span class="v">${esc(r.b??"—")}</span><span class="prov">${r.pb}</span></td></tr>`).join("")}
      </tbody></table>`);
   markDone(2);
 
-  // 3 — reconciliation
-  setStep(3); await wait(1150);
-  const findings = conflicts.length===0
-    ? [{t:"All shared fields agree",d:"Exporter, product, quantity and document reference match across both documents.",k:"ok"},
-       {t:"No evidence gaps",d:"Every field the consistency check requires is present on at least one document.",k:"ok"}]
-    : conflicts.map(f=>({t:`${f.f} conflict`,
-        d:`Invoice states <code>${f.a}</code>. Packing list states <code>${f.b}</code>. The consignment cannot be both.`,k:"warn"}))
-        .concat([{t:"Packing list is internally consistent",
-        d:`${pl.quantity} units across ${pl.packages} packages is ${(pl.quantity/pl.packages)} per package — the document does not contradict itself. The conflict only appears when it is compared against the invoice.`,k:"info"}]);
-  panel(3,"Cross-document reconciliation",`${conflicts.length} conflict${conflicts.length===1?"":"s"}`,
-    `<div class="hint">Shared fields are compared across documents. A document can be internally consistent and still fail here.</div>
-     ${findings.map(findRow).join("")}`);
-  document.querySelectorAll(".ev tbody tr").forEach((tr,i)=>tr.classList.add(rows[i].ok?"agree":"clash"));
+  /* 3 — reconciliation, rendered entirely from rec.comparisons */
+  setStep(3); await wait(1000);
+  const nBlock=(rec.blocking_mismatches||[]).length, nAdv=(rec.advisory_mismatches||[]).length;
+  const ratio=(pl.quantity&&pl.packages)?(pl.quantity/pl.packages):null;
+  panel(3,"Cross-document reconciliation",
+    nBlock?`${nBlock} blocking · ${nAdv} advisory`:(nAdv?`${nAdv} advisory`:"all fields agree"),
+    `<div class="hint">${esc(rec.summary||"")}</div>
+     <table class="ev" style="margin-bottom:6px"><thead><tr>
+       <th style="width:20%">Field</th><th style="width:30%">Invoice</th><th style="width:30%">Packing list</th><th style="width:20%">Result</th></tr></thead><tbody>
+     ${comparisons.map(c=>`<tr class="${c.match?"agree":(c.severity==="blocking"?"clash":"advis")}">
+        <td class="f">${FIELD_LABEL[c.field]||esc(c.field)}</td>
+        <td><span class="v mk">${esc(c.invoice_value??"—")}</span></td>
+        <td><span class="v mk">${esc(c.packing_list_value??"—")}</span></td>
+        <td><span class="sev ${!c.match&&c.severity==="blocking"?"block":""}">${c.match?"match":esc(c.severity)}</span></td></tr>`).join("")}
+     </tbody></table>
+     ${comparisons.filter(c=>!c.match).map(c=>
+        findRow(c.severity==="blocking"?"sq-warn":"sq-info",
+          `${FIELD_LABEL[c.field]||esc(c.field)} — ${esc(c.severity)}`, esc(c.note))).join("")}
+     ${(!nBlock&&!nAdv)?findRow("sq-ok","All compared fields agree",esc(rec.summary)):""}
+     ${ratio?findRow("sq-info","Packing list is internally consistent",
+       `${pl.quantity} units across ${pl.packages} packages is ${ratio} per package — the document does not contradict itself. Any conflict above appears only when it is compared against the invoice.`):""}`);
   markDone(3);
 
-  // 4 — rule engine
+  /* 4 — rules of origin */
   setStep(4); await wait(1000);
-  panel(4,"Rules-of-origin engine",v.rule_applied,
-    `<div class="hint">Deterministic code, not a model. The same inputs always produce the same result.</div>
-     <div class="find"><div class="badge-sq ${v.rule_satisfied?"sq-ok":"sq-warn"}">${v.rule_satisfied?"✓":"!"}</div>
-       <div><div class="ft">${v.rule_satisfied?"Rule satisfied":"Rule not satisfied"}</div>
-       <div class="fd">${v.rule_satisfied
-         ? "The submitted evidence supports the declaration on every field the rule tests."
-         : "The rule cannot be certified against evidence that contradicts itself. Resolve the conflicts above before relying on this result."}</div></div></div>`);
-  markDone(4);
+  const vc=origin.value_content, ctc=origin.ctc, insuff=origin.status==="INSUFFICIENT_DATA";
+  panel(4,"Rules of origin", esc(origin.agreement||"—"),
+    `<div class="hint">${esc(rules.rule_applied||"")}</div>
+     ${insuff
+       ? findRow("sq-warn","Origin could not be evaluated",
+           `${esc(origin.detail||"")} Missing: <code>${(origin.missing_fields||[]).map(esc).join("</code> <code>")}</code>. ${esc(origin.required_action||"")}`)
+       : `${vc?`<div class="eyebrow" style="margin-bottom:6px">Value content · ${esc(vc.method||"")}</div>
+            <div class="calc">
+              <div class="lab">FOB value</div><div class="num">USD ${Number(vc.fob_value).toFixed(2)}</div>
+              <div class="lab">Non-originating material value</div><div class="num">USD ${Number(vc.non_originating_value).toFixed(2)}</div>
+              <div class="lab tot">Regional value content</div><div class="num tot">${vc.regional_value_content_percent}% (threshold ${vc.threshold_percent}%)</div>
+            </div>`:""}
+          ${vc?findRow(vc.satisfied?"sq-ok":"sq-bad",
+              vc.satisfied?"Value content satisfied":"Value content not met",esc(vc.note||"")):""}
+          ${ctc?findRow(ctc.satisfied?"sq-ok":"sq-bad",
+              `${esc(ctc.rule)} — ${ctc.digits}-digit, product prefix ${esc(ctc.product_hs_prefix)}`,
+              esc(ctc.note||"")):""}`}
+     ${rules.citation?`<div class="cite">${esc(rules.citation)}${
+        rules.source_url?` <a href="${esc(rules.source_url)}" target="_blank" rel="noopener">Source</a>`:""}</div>`:""}`);
+  markDone(4, insuff || !rules.rule_satisfied);
 
-  // 5 — risk
-  setStep(5); await wait(900);
-  panel(5,"Risk banding",green?"band low":"band medium",
-    `<div class="hint">Prototype banding: derived directly from reconciliation output. A calibrated anomaly model replaces this in the full build.</div>
-     ${findRow(green
-       ? {t:"No reconciliation conflicts",d:"Risk band set to <code>LOW</code>.",k:"ok"}
-       : {t:`${conflicts.length} unresolved conflicts`,d:"Risk band set to <code>MEDIUM</code>. The case cannot take the streamlined path.",k:"warn"})}`);
-  markDone(5);
+  /* 5 — risk, rendered from risk.factors */
+  setStep(5); await wait(850);
+  const band=(risk.band||"LOW").toLowerCase();
+  panel(5,"Risk triage score",`${risk.score ?? 0} / 100 · ${esc(risk.band||"")}`,
+    `<div class="hint">${esc(risk.basis||"")}</div>
+     <div class="meter ${band==="medium"?"med":band==="high"?"high":""}"><i style="width:${risk.score||0}%"></i></div>
+     <div class="mrow"><span>0 · LOW</span><span>35 · MEDIUM</span><span>70 · HIGH</span></div>
+     <div style="margin-top:12px">${
+       (risk.factors||[]).length
+         ? risk.factors.map(f=>`<div class="fac"><span>${esc(f.detail)}</span><span class="pts">+${f.points}</span></div>`).join("")
+         : findRow("sq-ok","No risk factors recorded","Nothing in reconciliation or origin contributed points to this score.")}</div>`);
+  markDone(5,(risk.score||0)>0);
 
-  // 6 — autonomy gate
-  setStep(6); await wait(1200);
-  panel(6,"Autonomy gate",green?"streamlined":"withheld",
-    `<div class="find"><div class="badge-sq ${green?"sq-ok":"sq-warn"}">${green?"✓":"!"}</div>
-      <div><div class="ft">${green?"Streamlined routing permitted":"Streamlined routing withheld"}</div>
-      <div class="fd">${green
-        ? "Policy permits streamlined routing: evidence complete, rule satisfied, risk band LOW."
-        : "Policy blocks auto-clearance while any reconciliation conflict is open. The case is routed to an officer."}</div></div></div>`);
+  /* 6 — autonomy gate */
+  setStep(6); await wait(1100);
+  panel(6,"Autonomy gate", green?"streamlined":"withheld",
+    green
+      ? findRow("sq-ok","Streamlined routing permitted",
+          "Documents reconcile and the origin criterion is met. Policy allows this case to be queued for sign-off rather than investigation.")
+      : findRow("sq-warn","Streamlined routing withheld",
+          `Decision is <code>${esc(v.decision||"PENDING_REVIEW")}</code>. A document discrepancy never auto-rejects — it routes to a human, which is what a customs officer would do.`));
   markDone(6,!green);
 
-  // 7 — officer
-  setStep(7); await wait(700);
+  /* 7 — officer */
+  setStep(7); await wait(650);
   const acts = green
     ? ["Approve and issue","Open full evidence file","Escalate anyway"]
     : ["Request correction from exporter","Open full evidence file","Approve with officer note","Escalate to expert review"];
   const logLines=[
-    ["Extraction",`invoice ${inv.invoice_number} read · 6 fields`],
-    ["Extraction",`packing list ${pl.packing_list_number} read · 6 fields`],
-    ["Structured evidence",`${rows.length} fields bound to source document`],
-    ["Reconciliation",`${rows.length} fields compared · ${conflicts.length} conflicts`],
-    ["Rule engine",`${v.rule_applied} · ${v.rule_satisfied?"SATISFIED":"NOT SATISFIED"}`],
-    ["Risk engine",`band ${green?"LOW":"MEDIUM"} · derived from ${conflicts.length} conflicts`],
+    ["Extraction",`invoice ${esc(inv.invoice_number||"—")} · ${Object.keys(inv).length} fields`],
+    ["Extraction",`packing list ${esc(pl.packing_list_number||"—")} · ${Object.keys(pl).length} fields`],
+    ["Reconciliation",`${comparisons.length} compared · ${nBlock} blocking · ${nAdv} advisory`],
+    ["Rules of origin",`${esc(origin.agreement||"—")} · ${esc(origin.status||"—")} · satisfied=${!!origin.satisfied}`],
+    ["Risk engine",`score ${risk.score??0} · band ${esc(risk.band||"—")}`],
     ["Autonomy gate",green?"streamlined routing permitted":"streamlined routing WITHHELD"],
+    ["Decision",`${esc(v.decision||"—")} → ${esc(colour)}`],
     ["Officer","awaiting decision"]
   ];
   const p=panel(7,"Officer decision","human-in-the-loop",`
-    <div class="verdict ${green?"v-green":"v-amber"}" style="margin:-16px -18px 16px">
-      <span class="v-mark">${v.verdict}</span>
-      <div><h4 class="v-title">${green?"Green — streamlined review":"Yellow — correction required"}</h4>
-      <div class="v-reason">${v.reason}</div></div>
+    <div class="verdict ${green?"v-green":red?"v-red":"v-amber"}" style="margin:-16px -18px 16px">
+      <span class="v-mark">${esc(colour)}</span>
+      <div><h4 class="v-title">${green?"Cleared — ready for sign-off":red?"Rejected — origin criterion failed":"Held — human review required"}</h4>
+      <div class="v-reason">${esc(v.reason||"")}</div></div>
     </div>
     <p class="hint">CoO-PILOT does not issue certificates. It prepares the case; the officer decides, and every action is written to the audit trail.</p>
     <div class="acts">${acts.map((a,i)=>`<button class="act${i===0?" primary":""}">${a}</button>`).join("")}</div>
     <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--rule)">
-      <div class="eyebrow" style="margin-bottom:8px">Audit trail</div>
+      <div class="eyebrow" style="margin-bottom:8px">Audit trail · claim ${esc(res.claim_id||"—")}</div>
       <div class="log">${logLines.map((l,i)=>
         `<div><span class="ts">${new Date(Date.now()-(logLines.length-i)*1400).toLocaleTimeString('en-GB')}</span>
          <span class="st">${l[0]}</span><span>${l[1]}</span></div>`).join("")}</div>
@@ -444,15 +561,17 @@ async function run(){
 
 async function probe(){
   try{
-    const ctl=new AbortController(); setTimeout(()=>ctl.abort(),1200);
+    const ctl=new AbortController(); setTimeout(()=>ctl.abort(),1500);
     const r=await fetch(`${API_BASE}/health`,{signal:ctl.signal});
-    backendUp=r.ok;
-  }catch(e){ backendUp=false; }
+    if(r.ok){
+      const j=await r.json(); backendUp=true;
+      $("#beText").textContent=`FastAPI live${j.supabase_configured?" · supabase":" · local db"}`;
+    } else { backendUp=false; $("#beText").textContent="Recorded engine output"; }
+  }catch(e){ backendUp=false; $("#beText").textContent="Recorded engine output"; }
   $("#beDot").classList.toggle("on",backendUp);
-  $("#beText").textContent=backendUp?"FastAPI · localhost:8000":"Recorded case data";
 }
 
-renderCases(); renderDocs(); renderSteps(); probe();
+renderCases(); renderDocs(); renderDecl(); renderSteps(); probe();
 $("#run").onclick=run;
 </script>
 </body>
