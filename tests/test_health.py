@@ -13,3 +13,9 @@ def test_health(client: TestClient) -> None:
     body = response.json()
     assert body["status"] == "ok"
     assert isinstance(body["supabase_configured"], bool)
+
+
+def test_json_responses_declare_utf8(client: TestClient) -> None:
+    """Origin criteria contain "≥"; without a charset browsers mangle it."""
+    response = client.get("/health")
+    assert "charset=utf-8" in response.headers["content-type"].lower()

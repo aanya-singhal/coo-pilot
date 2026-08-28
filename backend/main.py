@@ -13,6 +13,7 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from backend.config import get_settings
 from backend.models import HealthResponse, RootResponse
@@ -24,10 +25,22 @@ VERSION = "0.1.0"
 
 settings = get_settings()
 
+class UTF8JSONResponse(JSONResponse):
+    """JSON with an explicit charset.
+
+    Responses carry non-ASCII text (the origin criteria use "≥"). Without
+    the charset a browser opening an endpoint directly falls back to a
+    legacy encoding and renders it as mojibake.
+    """
+
+    media_type = "application/json; charset=utf-8"
+
+
 app = FastAPI(
     title="CoO-PILOT Backend",
     description="Backend API for Certificate of Origin verification.",
     version=VERSION,
+    default_response_class=UTF8JSONResponse,
 )
 
 app.add_middleware(
