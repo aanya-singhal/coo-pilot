@@ -1,0 +1,27 @@
+# Render Blueprint for the CoO-PILOT backend.
+#
+# Render -> New -> Blueprint -> pick this repo. Render reads this file and
+# creates the service; no manual field entry.
+#
+# Secrets are deliberately NOT set here - this file is committed. Add
+# GEMINI_API_KEY / SUPABASE_URL / SUPABASE_KEY in the Render dashboard
+# (Environment tab) if and when you want them. With none set, the backend
+# runs on in-memory storage and extraction reports an error rather than
+# inventing data.
+
+services:
+  - type: web
+    name: coo-pilot-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      # Comma-separated frontend origins. Tighten this to the deployed
+      # console URL once it exists; "*" is fine only while the API holds
+      # no real credentials.
+      - key: CORS_ORIGINS
+        value: "*"
+      # Storage bucket name; only used when Supabase is configured.
+      - key: SUPABASE_BUCKET
+        value: documents
