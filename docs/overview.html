@@ -1,0 +1,198 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>CoO-PILOT — Technical Overview</title>
+<style>
+  @page { size: A4; margin: 11mm 13mm; }
+  :root{
+    --ink:#0E1B2C; --ink2:#41546B; --ink3:#71829A;
+    --rule:#D8E1EC; --wash:#F5F8FB;
+    --green:#1B7F4B; --amber:#B7791F; --red:#B03030;
+    --sans:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    --mono:"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{font-family:var(--sans);color:var(--ink);font-size:8.1pt;line-height:1.38;margin:0}
+  h1{font-size:16pt;margin:0 0 2pt;letter-spacing:-.2pt}
+  .sub{color:var(--ink2);font-size:8.6pt;margin-bottom:3pt}
+  .meta{font-family:var(--mono);font-size:7pt;color:var(--ink3);letter-spacing:.04em;
+        text-transform:uppercase;border-bottom:1.5px solid var(--ink);padding-bottom:7pt;margin-bottom:9pt}
+  h2{font-size:8.6pt;margin:8pt 0 3pt;padding-bottom:2.5pt;border-bottom:1px solid var(--rule);
+     letter-spacing:.05em;text-transform:uppercase;color:var(--ink)}
+  h2:first-of-type{margin-top:0}
+  p{margin:0 0 4pt}
+  table{width:100%;border-collapse:collapse;margin:0 0 6pt}
+  th{font-family:var(--mono);font-size:6.6pt;letter-spacing:.08em;text-transform:uppercase;
+     color:var(--ink3);text-align:left;padding:0 5pt 3pt 0;border-bottom:1px solid var(--rule);font-weight:600}
+  td{padding:2.2pt 5pt 2.2pt 0;vertical-align:top;border-bottom:1px solid var(--wash);font-size:7.8pt}
+  td.k{font-family:var(--mono);font-size:7.4pt;color:var(--ink2);white-space:nowrap}
+  .api td.k{font-size:6.6pt;white-space:normal;overflow-wrap:break-word;width:62%}
+  .api td{font-size:7.4pt}
+  code{font-family:var(--mono);font-size:7.4pt;background:var(--wash);padding:.5pt 2.5pt;color:var(--ink2)}
+  .flow{display:flex;gap:0;margin:2pt 0 6pt;align-items:stretch}
+  .st{flex:1;border:1px solid var(--rule);border-right:none;padding:4pt 5pt;background:#fff}
+  .st:last-child{border-right:1px solid var(--rule)}
+  .st .n{font-family:var(--mono);font-size:6.4pt;color:var(--ink3)}
+  .st .t{font-size:7.4pt;font-weight:600;line-height:1.25;margin-top:1pt}
+  .st .w{font-size:6.4pt;color:var(--ink3);margin-top:1pt}
+  .ai{background:#F0F5FA}  .det{background:#F3F8F4}  .hum{background:#FDF6E8}
+  .cols{display:flex;gap:11pt}
+  .col{flex:1}
+  .box{border:1px solid var(--rule);border-left:2.5px solid var(--ink);padding:4pt 6pt;
+       background:var(--wash);margin:0 0 5pt;font-size:7.7pt}
+  .box>b{display:block;margin-bottom:1.5pt}
+  .box li b{display:inline}
+  .g{color:var(--green);font-weight:600} .a{color:var(--amber);font-weight:600} .r{color:var(--red);font-weight:600}
+  ul{margin:0 0 5pt;padding-left:11pt} li{margin-bottom:1.5pt}
+  .foot{margin-top:9pt;padding-top:5pt;border-top:1px solid var(--rule);
+        font-size:6.8pt;color:var(--ink3);font-family:var(--mono)}
+  .pb{page-break-before:always}
+</style></head><body>
+
+<h1>CoO-PILOT</h1>
+<div class="sub">Evidence-backed pre-clearance for Certificate of Origin claims. AI reads the documents;
+deterministic logic decides; a human signs off.</div>
+<div class="meta">SIH 2026 &nbsp;·&nbsp; IHSIH024 &nbsp;·&nbsp; Team Null Pointers &nbsp;·&nbsp; Prototype</div>
+
+<h2>The problem</h2>
+<p>A preferential-tariff claim under a trade agreement is checked by hand. An officer reads a commercial
+invoice, a packing list and a cost statement, checks they agree, and decides whether the goods meet the
+agreement's rules of origin. It is slow, inconsistent between officers, and leaves no structured record of
+<em>why</em> a claim was cleared. CoO-PILOT prepares the case and shows its working. It does not issue
+certificates.</p>
+
+<h2>Pipeline</h2>
+<div class="flow">
+  <div class="st ai"><div class="n">1</div><div class="t">Multimodal AI</div><div class="w">Gemini · OCR + vision</div></div>
+  <div class="st ai"><div class="n">2</div><div class="t">Structured evidence</div><div class="w">field → source doc</div></div>
+  <div class="st det"><div class="n">3</div><div class="t">Reconciliation</div><div class="w">cross-document</div></div>
+  <div class="st det"><div class="n">4</div><div class="t">Rules of origin</div><div class="w">RVC + tariff shift</div></div>
+  <div class="st det"><div class="n">5</div><div class="t">Risk engine</div><div class="w">triage score</div></div>
+  <div class="st det"><div class="n">6</div><div class="t">Autonomy gate</div><div class="w">policy</div></div>
+  <div class="st hum"><div class="n">7</div><div class="t">Officer</div><div class="w">final decision</div></div>
+</div>
+<p><b>Stages 1–2 are AI. Stages 3–6 are deterministic code. Stage 7 is a person.</b> The model reads;
+it never decides. A misread field surfaces as a reconciliation mismatch and routes to review rather than
+passing through unnoticed.</p>
+
+<div class="cols">
+<div class="col">
+<h2>Architecture</h2>
+<table>
+<tr><th>Module</th><th>Role</th></tr>
+<tr><td class="k">extraction/</td><td>Gemini vision → structured JSON per document. Retries on transient failure; caches on file hash.</td></tr>
+<tr><td class="k">rules/</td><td>Reconciliation, origin criteria, risk scoring, decision policy.</td></tr>
+<tr><td class="k">backend/</td><td>FastAPI. Claims, documents, storage, orchestration, review workflow, audit.</td></tr>
+<tr><td class="k">console.html</td><td>Officer review console.</td></tr>
+</table>
+<p>Each module is reached through a thin adapter, so any one can be swapped without touching the others.
+The backend imports the extractor and the rules engine by name and degrades honestly if either is absent.</p>
+</div>
+
+<div class="col">
+<h2>Stack</h2>
+<table>
+<tr><th>Layer</th><th>Choice</th></tr>
+<tr><td class="k">API</td><td>FastAPI · Pydantic · Uvicorn</td></tr>
+<tr><td class="k">AI</td><td>Google Gemini (multimodal)</td></tr>
+<tr><td class="k">Data</td><td>Supabase Postgres · 7 tables, JSONB payloads</td></tr>
+<tr><td class="k">Files</td><td>Supabase Storage · PDF/PNG/JPG ≤ 20 MB</td></tr>
+<tr><td class="k">Deploy</td><td>Docker · Render blueprint</td></tr>
+<tr><td class="k">Tests</td><td>119, no credentials required</td></tr>
+</table>
+<div class="box"><b>Falls back, never fakes</b>
+With no database configured the API runs in memory; with no API key, extraction reports the failure rather
+than inventing values. Every degraded state is visible in the response.</div>
+</div>
+</div>
+
+<h2>What the system decides</h2>
+<table>
+<tr><th>Outcome</th><th>When</th><th>Worked example</th></tr>
+<tr><td><span class="g">APPROVED</span></td><td>Documents reconcile <em>and</em> the origin criterion is met</td>
+    <td>Invoice and packing list agree at 500 units; RVC 42.86% against the AIFTA 35% threshold; all
+        non-originating materials change tariff sub-heading. Risk 0.</td></tr>
+<tr><td><span class="a">PENDING_REVIEW</span></td><td>Anything unresolved — a discrepancy, or origin that cannot be evaluated</td>
+    <td>Invoice says 500 units, packing list says 480. Origin still passes, but the documents disagree, so
+        it is held for a human. Risk 40.</td></tr>
+<tr><td><span class="r">REJECTED</span></td><td>Origin was evaluated and failed</td>
+    <td>Same documents, non-originating value 3500: RVC 16.67%, below the threshold.</td></tr>
+</table>
+<p>A document discrepancy never auto-rejects — it routes to a person, which is what an officer would do.</p>
+
+<div class="box"><b>The refusal case</b>
+An invoice and a packing list <em>cannot</em> establish origin. Regional value content needs a cost
+statement: FOB value plus the value and classification of every non-originating material — the information
+CAROTAR 2020 requires an importer to hold in Form I. Without it the engine returns
+<code>INSUFFICIENT_DATA</code> and names the missing fields rather than estimating a percentage. Saying
+"I don't know" is a feature, not a gap.</div>
+
+<div class="foot">Page 1 of 2 &nbsp;·&nbsp; CoO-PILOT technical overview</div>
+
+<div class="pb"></div>
+
+<h2>Rules of origin — and their limits</h2>
+<p>Thresholds are stored as data with a citation and source URL attached to each, and the engine reports
+which criterion it applied so a reviewer can check the working.</p>
+<table>
+<tr><th>Agreement</th><th>Value content</th><th>Tariff shift</th><th>Basis</th></tr>
+<tr><td>AIFTA (ASEAN–India)</td><td>≥ 35% of FOB</td><td>CTSH · 6-digit</td>
+    <td>AIFTA Rules of Origin, Rule 4. Given effect in India by Notification 189/2009-Cus (N.T.), 31.12.2009.</td></tr>
+<tr><td>SAFTA (non-LDC)</td><td>≥ 40% of FOB</td><td>CTH · 4-digit</td><td>SAFTA Rules of Origin, twin criteria.</td></tr>
+<tr><td>SAFTA (LDC)</td><td>≥ 30% of FOB</td><td>CTH · 4-digit</td><td>Ten points below the non-LDC threshold.</td></tr>
+</table>
+<p>Regional value content is computed by the indirect (build-down) method:
+<code>(FOB − non-originating value) ÷ FOB × 100</code>. Goods declared wholly obtained skip both tests.</p>
+
+<div class="box"><b>Stated limits</b>
+<ul>
+<li><b>General rule only.</b> Product-specific rules override it for many tariff lines and are not implemented.</li>
+<li><b>Thresholds verified against secondary sources</b> (national trade portals), not gazette text. Verify before operational use.</li>
+<li><b>Risk weights are ours</b>, a triage aid with no statutory basis. The interface says so on screen.</li>
+<li><b>Three agreement variants</b> of India's many.</li>
+</ul>
+</div>
+
+<div class="cols">
+<div class="col">
+<h2>API</h2>
+<table class="api">
+<tr><th>Endpoint</th><th>Purpose</th></tr>
+<tr><td class="k">POST /claims</td><td>Open a case</td></tr>
+<tr><td class="k">POST /claims/{id}/documents</td><td>Upload a document</td></tr>
+<tr><td class="k">PUT&nbsp;&nbsp;/claims/{id}/origin-declaration</td><td>Attach the cost statement</td></tr>
+<tr><td class="k">POST /claims/{id}/verify</td><td>Run the full pipeline</td></tr>
+<tr><td class="k">GET&nbsp;&nbsp;/claims/{id}/result</td><td>Complete evidence record</td></tr>
+<tr><td class="k">GET&nbsp;&nbsp;/claims/review</td><td>Review queue</td></tr>
+<tr><td class="k">POST /claims/{id}/approve · reject · request-info</td><td>Officer decision</td></tr>
+<tr><td class="k">GET&nbsp;&nbsp;/claims/{id}/audit</td><td>Audit trail</td></tr>
+</table>
+<p>Plus per-document extract, reconcile, and dashboard counts — 23 routes, OpenAPI at <code>/docs</code>. The console consumes the same API a third party would.</p>
+</div>
+
+<div class="col">
+<h2>Auditability</h2>
+<p>Every claim carries a full trail — <code>claim_created</code>, <code>document_uploaded</code>,
+<code>extraction_started</code> / <code>completed</code> / <code>failed</code>,
+<code>reconciliation_completed</code>, <code>processing_completed</code>, and the officer's
+<code>approved</code> / <code>rejected</code> / <code>information_requested</code>. Credentials are never
+written to it.</p>
+<p>Each extracted field records the document it came from, so any value in a decision can be traced back to
+the page it was read from. Officer decisions are stored with reviewer and comments.</p>
+
+</div>
+</div>
+
+<h2>Honest status</h2>
+<div class="cols">
+<div class="col">
+<p><b>Working end to end.</b> Live Gemini extraction from PDF and image; deterministic reconciliation; origin evaluation with citations; risk triage; review workflow writing to a real audit trail; 119 passing tests; container builds and runs.</p>
+</div>
+<div class="col">
+<p><b>Not yet.</b> Product-specific rules. Authentication — the API is unauthenticated and suits a
+controlled demo, not deployment. Persistence is configured but was exercised in memory. Extraction has been
+tested on a small set of document layouts.</p>
+</div>
+</div>
+
+<div class="foot">Page 2 of 2 &nbsp;·&nbsp; CoO-PILOT technical overview &nbsp;·&nbsp; SIH 2026 · IHSIH024 · Null Pointers</div>
+
+</body></html>
