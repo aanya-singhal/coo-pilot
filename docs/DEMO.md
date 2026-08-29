@@ -7,11 +7,11 @@ cd ~/Desktop/CoO-PILOT
 ./scripts/start_demo.sh        # starts both servers and warms the cache
 ```
 
-Wait for **"READY"**. Open <http://127.0.0.1:5500/console.html> and leave it on screen.
+Wait for **READY**. Open <http://127.0.0.1:5500/console.html> and leave it up.
 
 > **The cache is the whole risk.** Extraction takes ~38s cold and ~0.05s warm,
-> and the cache dies when the backend restarts. If you restart anything, run
-> the script again before anyone is watching.
+> and the cache dies when the backend restarts. Restart anything, run the
+> script again before anyone is watching.
 
 ---
 
@@ -24,42 +24,54 @@ Wait for **"READY"**. Open <http://127.0.0.1:5500/console.html> and leave it on 
 > qualify for preferential tariff. CoO-PILOT prepares that case. It does not
 > issue the certificate — the officer still decides."
 
-### 0:15 — Clean case (30s)
+### 0:15 — Clean submission (25s) → **GREEN**
 
-**Click `case-clean-01` → Run pre-clearance.**
+**Select "Clean submission" → run it.**
 
 > "Gemini reads both documents. Every field is tagged with the document it came
-> from — that's stage 2, and it's what makes the decision auditable."
+> from — that's what makes the decision auditable."
 
-Point at the reconciliation table.
+Point at reconciliation.
 
-> "Reconciliation is deterministic — no AI. It matched 'Nilgiri Textiles Pvt
-> Ltd' against 'Private Limited' by normalising, not by guessing."
+> "This stage is deterministic — no AI. It matched 'Nilgiri Textiles Pvt Ltd'
+> against 'Private Limited' by normalising, not guessing."
 
-Point at stage 4.
+Point at rules of origin.
 
-> "AIFTA requires 35% regional value content plus a 6-digit tariff shift. This
-> one is 42.86%. The citation is on screen — Notification 189/2009-Customs."
+> "AIFTA needs 35% regional value content plus a 6-digit tariff shift. This is
+> 42.86%. The citation is on screen — Notification 189/2009-Customs."
 
-**Result: GREEN, risk 0.**
+**Result: ELIGIBLE · risk 0.**
 
-### 0:45 — Sloppy case (30s)
+### 0:40 — Correction required (25s) → **YELLOW**
 
-**Click `case-sloppy-01` → Run pre-clearance.**
+**Select "Correction required" → run it.**
 
-> "Same exporter, but the invoice says 500 units and the packing list says 480."
+> "Same exporter. Invoice says 500 units, packing list says 480."
 
 > "Origin still passes — the cost statement is unchanged. But the documents
 > disagree, so it's held. A discrepancy never auto-rejects; it routes to a
-> human. Risk 40, medium."
+> human. Risk 40."
 
-**Result: YELLOW, held.**
+**Result: REVIEW REQUIRED.**
 
-### 1:15 — The refusal (30s) ← *the differentiator*
+### 1:05 — Origin requirement failed (25s) → **RED**
 
-**Uncheck "Submit declaration with case" → rerun the clean case.**
+**Select "Origin requirement failed" → run it.**
 
-> "Now I remove the cost statement and run the same clean documents again."
+> "Documents agree here. But the declared non-originating material value is
+> higher, so regional value content comes to 31% — under the 35% threshold."
+
+> "This is the only thing that gets an outright rejection: the origin rule was
+> evaluated and failed. Not a paperwork problem — a substantive one."
+
+**Result: NOT ELIGIBLE.**
+
+### 1:30 — The refusal (20s) ← *the differentiator*
+
+**Untick "Submit declaration with case" → rerun the clean case.**
+
+> "Now I remove the cost statement and run the same clean documents."
 
 > "It refuses. An invoice and a packing list cannot establish origin — you need
 > the Form I cost statement under CAROTAR 2020. It names the three missing
@@ -67,37 +79,37 @@ Point at stage 4.
 
 > "Any system can show a green tick. This one tells you when it doesn't know."
 
-### 1:45 — Close (15s)
+### 1:50 — Close (10s)
 
-**Click "Open full evidence file".**
-
-> "Every run is a real claim in the backend with a full audit trail. This is the
-> record, served by the API — the officer's decision is written to it too."
-
-> "AI reads the documents. Deterministic logic decides. A human signs off."
+> "AI reads the documents. Deterministic logic decides. A human signs off — and
+> the officer's decision is written to the claim's audit trail in the backend."
 
 ---
 
 ## If asked
 
 **"Is the AI actually running?"**
-Yes — Gemini reads the images live. Uncheck the declaration and the whole
-result changes, or open the network tab.
+Yes — Gemini reads the images live. Untick the declaration and the whole result
+changes, or open the network tab.
 
 **"Are those real trade rules?"**
 The AIFTA thresholds and the notification are real and cited on screen. We
 implement the *general* rule only — product-specific rules override it for many
 tariff lines, and that's the next step. The risk weights are ours, not
-statutory, and the UI says so.
+statutory, and the interface says so.
 
 **"What if extraction is wrong?"**
 It never decides. It produces evidence; deterministic logic decides; a human
-signs off. A field it misreads shows up as a reconciliation mismatch, which
-routes to review rather than through.
+signs off. A misread field surfaces as a reconciliation mismatch and routes to
+review rather than passing through.
 
 **"Where's the data?"**
-Postgres via Supabase, with the original documents in object storage.
-*(Running in-memory today — say so if pressed; don't claim persistence.)*
+Postgres via Supabase, documents in object storage, seven tables, full audit
+trail. *(Running in memory today — say so if pressed; don't claim persistence.)*
+
+**"How is this different from OCR?"**
+OCR gives you text. This gives you a decision with its working shown: which
+document each value came from, which rule was applied, why it was held.
 
 ---
 
@@ -105,10 +117,11 @@ Postgres via Supabase, with the original documents in object storage.
 
 | Symptom | Cause | Do this |
 | --- | --- | --- |
-| Spinner stuck ~40s | Cold cache | Let it finish. It only happens once per document. |
+| Spinner stuck ~40s | Cold cache | Let it finish — once per document only |
 | "Backend unavailable" banner | Backend died | `./scripts/start_demo.sh` in another terminal |
 | Officer buttons say "not submitted" | Run used recorded data | Rerun the case; needs a live run |
 
-**The console never lies about its state.** If the backend is down it says so and
-labels the data as recorded. That's a feature — if it happens live, say
-"that's the fallback path, and it's telling you it isn't live." Then fix it.
+**The console never lies about its state.** If the backend is down it says so
+and labels the data as recorded. If that happens live, say *"that's the fallback
+path — it's telling you it isn't live"*, then fix it. That reads as
+trustworthy, not broken.
