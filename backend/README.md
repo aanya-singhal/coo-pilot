@@ -34,6 +34,10 @@ Run [`backend/db/schema.sql`](db/schema.sql) once in the Supabase SQL editor.
 It creates `claims`, `documents`, `extracted_data`, `verification_results`,
 `audit_logs`, and the private `documents` storage bucket.
 
+An existing project can either re-run `schema.sql` - every statement in it is
+idempotent - or run just the one file it is missing from
+[`db/migrations/`](db/migrations/).
+
 ## API
 
 | Method | Path | Purpose |
