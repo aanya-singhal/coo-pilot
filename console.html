@@ -202,6 +202,14 @@ tr.agree .v.mk:after{content:" ✓";color:var(--green);font-weight:600}
 .b-green{background:var(--green)} .b-amber{background:var(--amber)} .b-red{background:var(--red)}
 .b-grey{background:var(--ink-3)}
 @media (max-width:760px){ .mtab .mt-s{display:none} .mtab{padding-right:20px} }
+/* rule version stamp */
+.rulever{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;background:var(--wash);
+  border:1px solid var(--rule);border-left:3px solid var(--navy);padding:9px 13px;margin-bottom:12px}
+.rv-tag{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+  background:var(--navy);color:#fff;padding:2px 6px;flex:none}
+.rv-l{font-size:12.5px;font-weight:600}
+.rv-d{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);margin-left:auto}
+.rv-n{flex-basis:100%;font-size:11.5px;color:var(--ink-2);line-height:1.45;margin-top:3px}
 /* tamper-evident audit chain */
 .chain{margin-top:18px;padding-top:14px;border-top:1px solid var(--rule)}
 .chain-head{display:flex;align-items:center;gap:12px;margin-bottom:9px;flex-wrap:wrap}
@@ -749,8 +757,16 @@ async function run(){
 
   /* 4b — the calculation itself */
   await wait(650);
-  panel(4,"Origin determination", esc(rules.rule_applied||"").slice(0,46)+"…",
-    `<div class="hint">${esc(rules.rule_applied||"")}</div>
+  const rv=origin.rule_version, rvFrom=origin.effective_from;
+  panel(4,"Origin determination",
+    rv?`${esc(origin.agreement||"")} · rule v${rv}`:esc(rules.rule_applied||"").slice(0,46)+"…",
+    `${rv?`<div class="rulever">
+        <span class="rv-tag">Rule v${rv}</span>
+        <span class="rv-l">${esc(origin.agreement||"")}</span>
+        <span class="rv-d">in force from ${esc(rvFrom||"—")}</span>
+        <span class="rv-n">Assessed under the version of this rule in force at the time of the decision. Amending a rule creates a new version; it never changes a decision already taken.</span>
+     </div>`:""}
+     <div class="hint">${esc(rules.rule_applied||"")}</div>
      ${insuff
        ? findRow("sq-warn","Origin could not be evaluated",
            `${esc(origin.detail||"")} Missing: <code>${(origin.missing_fields||[]).map(esc).join("</code> <code>")}</code>. ${esc(origin.required_action||"")}`)
@@ -808,7 +824,7 @@ async function run(){
     ["Extraction",`invoice ${esc(inv.invoice_number||"—")} · ${Object.keys(inv).length} fields`],
     ["Extraction",`packing list ${esc(pl.packing_list_number||"—")} · ${Object.keys(pl).length} fields`],
     ["Reconciliation",`${comparisons.length} compared · ${nBlock} blocking · ${nAdv} advisory`],
-    ["Rules of origin",`${esc(origin.agreement||"—")} · ${esc(origin.status||"—")} · satisfied=${!!origin.satisfied}`],
+    ["Rules of origin",`${esc(origin.agreement||"—")}${origin.rule_version?` v${origin.rule_version}`:""} · ${esc(origin.status||"—")} · satisfied=${!!origin.satisfied}`],
     ["Risk engine",`score ${risk.score??0} · band ${esc(risk.band||"—")}`],
     ["Case routing",green?"streamlined routing permitted":"human review required"],
     ["Decision",`${esc(v.decision||"—")} → ${esc(colour)}`],
