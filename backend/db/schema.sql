@@ -115,6 +115,11 @@ create table if not exists audit_logs (
 
 create index if not exists audit_logs_claim_id_idx on audit_logs (claim_id, created_at);
 
+-- Tamper-evidence: each row carries the hash of its own contents and the hash
+-- of the row before it, so a deleted or edited entry breaks the chain.
+alter table audit_logs add column if not exists previous_entry_hash text;
+alter table audit_logs add column if not exists entry_hash text;
+
 -- Storage bucket for the original uploaded files.
 -- Private: the backend reads objects with the service key.
 insert into storage.buckets (id, name, public)
