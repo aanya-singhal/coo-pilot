@@ -202,6 +202,34 @@ tr.agree .v.mk:after{content:" ✓";color:var(--green);font-weight:600}
 .b-green{background:var(--green)} .b-amber{background:var(--amber)} .b-red{background:var(--red)}
 .b-grey{background:var(--ink-3)}
 @media (max-width:760px){ .mtab .mt-s{display:none} .mtab{padding-right:20px} }
+/* tamper-evident audit chain */
+.chain{margin-top:18px;padding-top:14px;border-top:1px solid var(--rule)}
+.chain-head{display:flex;align-items:center;gap:12px;margin-bottom:9px;flex-wrap:wrap}
+.chain-verify{font:inherit;font-size:11.5px;font-weight:600;padding:6px 13px;border:1px solid var(--navy);
+  background:var(--paper);color:var(--navy);cursor:pointer;margin-left:auto}
+.chain-verify:hover{background:var(--navy);color:#fff}
+.chain-verify:disabled{border-color:var(--rule-2);color:var(--ink-3);cursor:not-allowed;background:var(--wash)}
+.chain-state{border-left:3px solid;padding:10px 13px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.cs-ok{background:var(--green-bg);border-color:var(--green)}
+.cs-bad{background:var(--red-bg);border-color:var(--red)}
+.cs-idle{background:var(--wash);border-color:var(--rule-2)}
+.cs-m{font-size:14px;font-weight:700;line-height:1}
+.cs-ok .cs-m,.cs-ok .cs-l{color:var(--green)}
+.cs-bad .cs-m,.cs-bad .cs-l{color:var(--red)}
+.cs-idle .cs-m,.cs-idle .cs-l{color:var(--ink-3)}
+.cs-l{font-size:12.5px;font-weight:600;letter-spacing:.02em}
+.cs-s{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink-2)}
+.cs-why{flex-basis:100%;font-size:12px;color:var(--ink-2);line-height:1.45;margin-top:2px}
+.hlist{font-family:var(--mono);font-size:10.5px;max-height:150px;overflow-y:auto;border:1px solid var(--rule)}
+.hrow{display:flex;gap:10px;align-items:baseline;padding:4px 9px;border-bottom:1px dotted var(--rule)}
+.hrow:last-child{border-bottom:0}
+.hrow.bad{background:var(--red-bg)}
+.hrow .hi{color:var(--ink-3);width:16px;flex:none;text-align:right}
+.hrow .hm{width:12px;flex:none;font-weight:700}
+.hrow.good .hm{color:var(--green)} .hrow.bad .hm{color:var(--red)} .hrow.skip .hm{color:var(--ink-3)}
+.hrow .ha{flex:1;min-width:0;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hrow .hh{color:var(--ink-3);flex:none}
+.hrow.bad .hh,.hrow.bad .ha{color:var(--red)}
 .err{background:var(--red-bg);border:1px solid #E3B8B8;padding:12px 15px;font-size:12.5px;color:var(--ink-2);margin-bottom:14px}
 .err b{color:var(--red)}
 /* document workspace: source beside extraction */
@@ -802,7 +830,52 @@ async function run(){
       <div class="log">${logLines.map((l,i)=>
         `<div><span class="ts">${new Date(Date.now()-(logLines.length-i)*1400).toLocaleTimeString('en-GB')}</span>
          <span class="st">${l[0]}</span><span>${l[1]}</span></div>`).join("")}</div>
+    </div>
+    <div class="chain">
+      <div class="chain-head">
+        <span class="eyebrow">Tamper-evident record</span>
+        <button class="chain-verify" id="verifyChain">Verify chain</button>
+      </div>
+      <div class="hint" style="margin:-2px 0 9px">Each entry stores a SHA-256 hash of its own contents and of the entry before it. Editing or removing any past entry breaks the chain, and verification names the entry that changed.</div>
+      <div class="chain-state cs-idle" id="chainState">
+        <span class="cs-m">·</span><span class="cs-l">Not yet verified</span>
+        <span class="cs-s">press Verify chain</span>
+      </div>
+      <div class="hlist" id="chainList"></div>
     </div>`);
+  /* Verify the audit hash chain against the backend. */
+  const vb=p.querySelector("#verifyChain");
+  if(vb) vb.onclick=async()=>{
+    const state=p.querySelector("#chainState"), list=p.querySelector("#chainList");
+    vb.disabled=true; vb.textContent="Verifying…";
+    try{
+      const r=await fetch(`${API_BASE}/claims/audit/verify`);
+      if(!r.ok) throw new Error(`backend returned ${r.status}`);
+      const d=await r.json();
+      const ok=d.intact;
+      state.className="chain-state "+(ok?"cs-ok":"cs-bad");
+      state.innerHTML=`<span class="cs-m">${ok?"✓":"✕"}</span>
+        <span class="cs-l">${ok?"CHAIN INTACT":"CHAIN BROKEN"}</span>
+        <span class="cs-s">${d.checked} entries verified${d.unhashed?` · ${d.unhashed} unhashed`:""}</span>
+        ${d.reason?`<span class="cs-why">${esc(d.reason)}</span>`:""}`;
+      list.innerHTML=(d.entries||[]).map(e=>{
+        const cls=e.status==="ok"?"good":e.status==="broken"?"bad":"skip";
+        const mark=e.status==="ok"?"✓":e.status==="broken"?"✕":"·";
+        return `<div class="hrow ${cls}"><span class="hi">${e.index}</span>
+          <span class="hm">${mark}</span><span class="ha">${esc(e.action||"—")}</span>
+          <span class="hh">${(e.entry_hash||"unhashed").slice(0,16)}</span></div>`;}).join("");
+      writeLog("Audit", ok
+        ? `chain verified · ${d.checked} entries intact`
+        : `chain verification FAILED at entry ${d.broken_at_index}`);
+    }catch(err){
+      state.className="chain-state cs-bad";
+      state.innerHTML=`<span class="cs-m">!</span><span class="cs-l">Could not verify</span>
+        <span class="cs-why">${esc(err.message)}. The backend must be running to check the chain.</span>`;
+      list.innerHTML="";
+    }
+    vb.disabled=false; vb.textContent="Verify chain";
+  };
+
   const writeLog=(who,msg)=>{
     const log=p.querySelector(".log");
     log.insertAdjacentHTML("beforeend",
