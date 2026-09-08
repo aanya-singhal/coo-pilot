@@ -8,6 +8,11 @@ Two implementations of the same small interface:
 
 Keeping the interface narrow means routes and services never touch the
 Supabase client directly, and unit tests never need real credentials.
+
+Audit log entries are hash-chained for tamper-evidence: each entry's
+hash covers its own content plus the previous entry's hash, computed in
+backend/services/hashing.py. Editing any past entry breaks every hash
+after it, which list_all_audit_logs() + verify_chain() can detect.
 """
 
 from __future__ import annotations
@@ -130,6 +135,9 @@ class Database(ABC):
 
     @abstractmethod
     def list_audit_logs(self, claim_id: str) -> list[Row]: ...
+
+    @abstractmethod
+    def list_all_audit_logs(self) -> list[Row]: ...
 
 
 class InMemoryDatabase(Database):
@@ -313,18 +321,37 @@ class InMemoryDatabase(Database):
     def write_audit_log(
         self, *, claim_id: str | None, action: str, details: dict[str, Any]
     ) -> Row:
+        from backend.services.hashing import compute_entry_hash, compute_payload_hash
+
+        entry_id = _new_id()
+        timestamp = _now()
+        previous_entry_hash = self.audit[-1]["entry_hash"] if self.audit else None
+        payload_hash = compute_payload_hash(details)
+        entry_hash = compute_entry_hash(
+            entry_id=entry_id,
+            timestamp=timestamp,
+            action=action,
+            claim_id=claim_id,
+            payload_hash=payload_hash,
+            previous_entry_hash=previous_entry_hash,
+        )
         row: Row = {
-            "id": _new_id(),
+            "id": entry_id,
             "claim_id": claim_id,
             "action": action,
             "details": details,
-            "created_at": _now(),
+            "created_at": timestamp,
+            "previous_entry_hash": previous_entry_hash,
+            "entry_hash": entry_hash,
         }
         self.audit.append(row)
         return dict(row)
 
     def list_audit_logs(self, claim_id: str) -> list[Row]:
         return [dict(r) for r in self.audit if r["claim_id"] == claim_id]
+
+    def list_all_audit_logs(self) -> list[Row]:
+        return [dict(r) for r in self.audit]
 
 
 class SupabaseDatabase(Database):
@@ -552,7 +579,40 @@ class SupabaseDatabase(Database):
     def write_audit_log(
         self, *, claim_id: str | None, action: str, details: dict[str, Any]
     ) -> Row:
-        payload = {"claim_id": claim_id, "action": action, "details": details}
+        from backend.services.hashing import compute_entry_hash, compute_payload_hash
+
+        # Fetch the most recent entry across the whole table to chain to it.
+        last_response = (
+            self._client.table("audit_logs")
+            .select("entry_hash")
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        last_row = self._one(last_response)
+        previous_entry_hash = last_row["entry_hash"] if last_row else None
+
+        entry_id = _new_id()
+        timestamp = _now()
+        payload_hash = compute_payload_hash(details)
+        entry_hash = compute_entry_hash(
+            entry_id=entry_id,
+            timestamp=timestamp,
+            action=action,
+            claim_id=claim_id,
+            payload_hash=payload_hash,
+            previous_entry_hash=previous_entry_hash,
+        )
+
+        payload = {
+            "id": entry_id,
+            "claim_id": claim_id,
+            "action": action,
+            "details": details,
+            "created_at": timestamp,
+            "previous_entry_hash": previous_entry_hash,
+            "entry_hash": entry_hash,
+        }
         response = self._client.table("audit_logs").insert(payload).execute()
         row = self._one(response)
         if row is None:
@@ -564,6 +624,15 @@ class SupabaseDatabase(Database):
             self._client.table("audit_logs")
             .select("*")
             .eq("claim_id", claim_id)
+            .order("created_at")
+            .execute()
+        )
+        return self._rows(response)
+
+    def list_all_audit_logs(self) -> list[Row]:
+        response = (
+            self._client.table("audit_logs")
+            .select("*")
             .order("created_at")
             .execute()
         )
