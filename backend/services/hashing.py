@@ -78,3 +78,93 @@ def verify_chain(entries: list[dict[str, Any]]) -> tuple[bool, int | None]:
             return False, i
         previous_hash = entry["entry_hash"]
     return True, None
+
+
+def verify_chain_report(entries: list[dict[str, Any]]) -> dict[str, Any]:
+    """Verify the chain and return a full report suitable for an API or UI.
+
+    ``verify_chain`` answers "is it intact"; this answers "what exactly is
+    wrong, and where", which is what an officer reviewing an audit trail
+    needs. It distinguishes the two ways a chain breaks:
+
+    * the entry's own contents were edited, so its hash no longer matches;
+    * the entry no longer links to its predecessor, meaning an earlier entry
+      was deleted or reordered.
+
+    Entries written before hash-chaining existed carry no ``entry_hash``.
+    They are reported as ``unhashed`` and skipped rather than counted as
+    tampering, so switching the feature on does not invalidate old rows.
+    """
+    entries_out: list[dict[str, Any]] = []
+    previous_hash: str | None = None
+    checked = 0
+    unhashed = 0
+    broken_index: int | None = None
+    broken_id: str | None = None
+    reason: str | None = None
+
+    for index, entry in enumerate(entries):
+        stored = entry.get("entry_hash")
+        action = entry.get("action")
+
+        if not stored:
+            unhashed += 1
+            entries_out.append(
+                {
+                    "index": index,
+                    "id": entry.get("id"),
+                    "action": action,
+                    "created_at": entry.get("created_at"),
+                    "entry_hash": None,
+                    "status": "unhashed",
+                }
+            )
+            continue
+
+        recorded_previous = entry.get("previous_entry_hash")
+        expected = compute_entry_hash(
+            entry_id=entry["id"],
+            timestamp=str(entry["created_at"]),
+            action=entry["action"],
+            claim_id=entry.get("claim_id"),
+            payload_hash=compute_payload_hash(entry.get("details", {}) or {}),
+            previous_entry_hash=recorded_previous,
+        )
+
+        contents_ok = stored == expected
+        link_ok = recorded_previous == previous_hash
+        ok = contents_ok and link_ok
+
+        if not ok and broken_index is None:
+            broken_index = index
+            broken_id = entry.get("id")
+            reason = (
+                f"Entry {index} ({action}) has been altered since it was written: "
+                "its contents no longer match its recorded hash."
+                if not contents_ok
+                else f"Entry {index} ({action}) does not link to the entry before "
+                "it: an earlier entry was removed or reordered."
+            )
+
+        entries_out.append(
+            {
+                "index": index,
+                "id": entry.get("id"),
+                "action": action,
+                "created_at": entry.get("created_at"),
+                "entry_hash": stored,
+                "status": "ok" if ok else "broken",
+            }
+        )
+        checked += 1
+        previous_hash = stored
+
+    return {
+        "intact": broken_index is None,
+        "checked": checked,
+        "unhashed": unhashed,
+        "broken_at_index": broken_index,
+        "broken_at_id": broken_id,
+        "reason": reason,
+        "entries": entries_out,
+    }

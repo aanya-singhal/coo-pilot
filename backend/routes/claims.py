@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
@@ -16,7 +16,7 @@ from backend.models import (
     OriginDeclarationRequest,
     OriginDeclarationResponse,
 )
-from backend.services import audit, claims as claims_service, pipeline
+from backend.services import audit, claims as claims_service, hashing, pipeline
 from backend.services.claims import ClaimNotFoundError
 
 router = APIRouter(prefix="/claims", tags=["claims"])
@@ -116,3 +116,13 @@ def get_claim_audit(claim_id: str, db: DatabaseDep) -> list[AuditLogResponse]:
     except ClaimNotFoundError:
         raise HTTPException(status_code=404, detail=f"Claim '{claim_id}' not found")
     return [AuditLogResponse(**row) for row in audit.list_for_claim(db, claim_id)]
+
+
+@router.get("/audit/verify")
+def verify_audit_chain(db: DatabaseDep) -> dict[str, Any]:
+    """Re-walk the audit log's hash chain and report any break.
+
+    The chain spans every claim rather than one claim's slice, so deleting an
+    entry belonging to a different claim still shows up here.
+    """
+    return hashing.verify_chain_report(db.list_all_audit_logs())
