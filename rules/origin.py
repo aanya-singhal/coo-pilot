@@ -50,6 +50,8 @@ def _insufficient(
         "status": "INSUFFICIENT_DATA",
         "satisfied": False,
         "agreement": criteria.code,
+        "rule_version": criteria.version,
+        "effective_from": criteria.effective_from,
         "criterion": criteria.describe(),
         "citation": criteria.citation,
         "source_url": criteria.source_url,
@@ -156,8 +158,16 @@ def _evaluate_ctc(
 def evaluate_origin(declaration: dict[str, Any] | None) -> dict[str, Any]:
     """Evaluate the general rule of origin for the claimed agreement."""
     declaration = declaration or {}
-    criteria = get_criteria(declaration.get("agreement")) or get_criteria(
-        DEFAULT_AGREEMENT
+    # A declaration may pin the rule version it was assessed under, so an
+    # already-decided case stays explainable after the rule is amended.
+    # Without a pin, the current version applies.
+    pinned = declaration.get("rule_version")
+    agreement = declaration.get("agreement")
+    criteria = (
+        get_criteria(agreement, pinned)
+        or get_criteria(agreement)
+        or get_criteria(DEFAULT_AGREEMENT, pinned)
+        or get_criteria(DEFAULT_AGREEMENT)
     )
     assert criteria is not None  # DEFAULT_AGREEMENT is always registered
 
@@ -175,6 +185,8 @@ def evaluate_origin(declaration: dict[str, Any] | None) -> dict[str, Any]:
             "status": "EVALUATED",
             "satisfied": True,
             "agreement": criteria.code,
+            "rule_version": criteria.version,
+            "effective_from": criteria.effective_from,
             "criterion": "Wholly obtained or produced in the exporting party",
             "citation": criteria.citation,
             "source_url": criteria.source_url,
@@ -212,6 +224,8 @@ def evaluate_origin(declaration: dict[str, Any] | None) -> dict[str, Any]:
         "status": "EVALUATED",
         "satisfied": satisfied,
         "agreement": criteria.code,
+        "rule_version": criteria.version,
+        "effective_from": criteria.effective_from,
         "criterion": criteria.describe(),
         "citation": criteria.citation,
         "source_url": criteria.source_url,
