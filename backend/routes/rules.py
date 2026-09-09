@@ -20,6 +20,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from backend.database import Database, get_database
+from backend.services import rule_store
 from rules import agreements
 from rules.agreements import ChangeInTariffClassification
 
@@ -124,6 +125,17 @@ def amend_rule(code: str, request: AmendRuleRequest, db: DatabaseDep) -> dict[st
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    # Write the version through to storage before recording the amendment,
+    # so a restart cannot leave an audit entry referring to a version the
+    # registry no longer knows about.
+    try:
+        rule_store.persist(db, new_version)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(
+            status_code=503,
+            detail=f"Amendment could not be stored, so it was not applied: {exc}",
+        ) from exc
 
     db.write_audit_log(
         claim_id=None,

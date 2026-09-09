@@ -136,6 +136,17 @@ class Database(ABC):
     @abstractmethod
     def list_audit_logs(self, claim_id: str) -> list[Row]: ...
 
+    # --- rule versions -------------------------------------------------
+    @abstractmethod
+    def list_rule_versions(self) -> list[Row]:
+        """Every stored rule version, oldest first per agreement."""
+        ...
+
+    @abstractmethod
+    def save_rule_version(self, *, criteria: dict[str, Any]) -> Row:
+        """Persist one rule version. Versions are append-only."""
+        ...
+
     @abstractmethod
     def list_all_audit_logs(self) -> list[Row]: ...
 
@@ -151,6 +162,7 @@ class InMemoryDatabase(Database):
         self.declarations: dict[str, Row] = {}
         self.verifications: dict[str, Row] = {}
         self.audit: list[Row] = []
+        self.rule_versions: list[Row] = []
 
     # --- claims -------------------------------------------------------
     def create_claim(
@@ -349,6 +361,16 @@ class InMemoryDatabase(Database):
 
     def list_audit_logs(self, claim_id: str) -> list[Row]:
         return [dict(r) for r in self.audit if r["claim_id"] == claim_id]
+
+    # --- rule versions -------------------------------------------------
+    def list_rule_versions(self) -> list[Row]:
+        return [dict(r) for r in self.rule_versions]
+
+    def save_rule_version(self, *, criteria: dict[str, Any]) -> Row:
+        row: Row = {"id": _new_id(), "created_at": _now(), **criteria}
+        self.rule_versions.append(row)
+        return dict(row)
+
 
     def list_all_audit_logs(self) -> list[Row]:
         return [dict(r) for r in self.audit]
@@ -628,6 +650,24 @@ class SupabaseDatabase(Database):
             .execute()
         )
         return self._rows(response)
+
+    # --- rule versions -------------------------------------------------
+    def list_rule_versions(self) -> list[Row]:
+        response = (
+            self._client.table("rule_versions")
+            .select("*")
+            .order("code")
+            .order("version")
+            .execute()
+        )
+        return self._rows(response)
+
+    def save_rule_version(self, *, criteria: dict[str, Any]) -> Row:
+        response = self._client.table("rule_versions").insert(criteria).execute()
+        row = self._one(response)
+        if row is None:
+            raise RuntimeError("Supabase did not return the inserted rule version")
+        return row
 
     def list_all_audit_logs(self) -> list[Row]:
         response = (

@@ -10,12 +10,16 @@ Interactive API docs for the frontend: http://localhost:8000/docs
 from __future__ import annotations
 
 import logging
+from contextlib import asynccontextmanager
+from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from backend.config import get_settings
+from backend.database import get_database
+from backend.services import rule_store
 from backend.models import HealthResponse, RootResponse
 from backend.routes import (
     claims,
@@ -44,7 +48,26 @@ class UTF8JSONResponse(JSONResponse):
     media_type = "application/json; charset=utf-8"
 
 
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    """Restore amended rule versions before serving any request.
+
+    The registry holds version 1 of each agreement from code. Anything
+    amended since lives in storage, and has to be back in the registry
+    before a claim is evaluated, or a decision would silently be judged
+    under a superseded rule.
+    """
+    try:
+        restored = rule_store.restore(get_database())
+        if restored:
+            logger.info("Restored %d amended rule version(s)", restored)
+    except Exception:  # noqa: BLE001 - never block startup on this
+        logger.exception("Could not restore rule versions; using code defaults")
+    yield
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title="CoO-PILOT Backend",
     description="Backend API for Certificate of Origin verification.",
     version=VERSION,
