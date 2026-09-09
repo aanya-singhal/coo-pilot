@@ -202,6 +202,27 @@ tr.agree .v.mk:after{content:" ✓";color:var(--green);font-weight:600}
 .b-green{background:var(--green)} .b-amber{background:var(--amber)} .b-red{background:var(--red)}
 .b-grey{background:var(--ink-3)}
 @media (max-width:760px){ .mtab .mt-s{display:none} .mtab{padding-right:20px} }
+/* policy administration */
+.admin{border-top:1px solid var(--rule);margin-top:22px;padding-top:18px}
+.admin h2{margin-bottom:4px}
+.polnow{background:var(--wash);border:1px solid var(--rule);border-left:3px solid var(--navy);
+  padding:9px 12px;margin:9px 0 11px;font-family:var(--mono);font-size:10.5px;line-height:1.7;color:var(--ink-2)}
+.polnow b{color:var(--ink);font-weight:600}
+.fld-row{display:flex;gap:8px;margin-bottom:8px}
+.fld-row label{flex:1;display:flex;flex-direction:column;gap:3px}
+.fld-row span{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.admin input,.admin select{font:inherit;font-size:12.5px;padding:6px 8px;border:1px solid var(--rule-2);
+  background:var(--paper);color:var(--ink);width:100%;font-family:var(--mono)}
+.admin input:focus,.admin select:focus{outline:2px solid var(--link);outline-offset:-1px}
+.amend{width:100%;margin-top:4px;background:var(--paper);color:var(--navy);border:1px solid var(--navy);
+  padding:10px;font:inherit;font-weight:600;font-size:12.5px;cursor:pointer}
+.amend:hover:not(:disabled){background:var(--navy);color:#fff}
+.amend:disabled{border-color:var(--rule-2);color:var(--ink-3);cursor:not-allowed}
+.amended{border-left:3px solid var(--amber);background:var(--amber-bg);padding:10px 12px;margin-top:11px;
+  font-size:12px;line-height:1.5;color:var(--ink-2)}
+.amended b{color:var(--amber)}
+.amended .was{font-family:var(--mono);font-size:11px;color:var(--ink-3);text-decoration:line-through}
+.amended .now{font-family:var(--mono);font-size:11px;color:var(--amber);font-weight:600}
 /* rule version stamp */
 .rulever{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;background:var(--wash);
   border:1px solid var(--rule);border-left:3px solid var(--navy);padding:9px 13px;margin-bottom:12px}
@@ -308,6 +329,22 @@ tr.agree .v.mk:after{content:" ✓";color:var(--green);font-weight:600}
     <button class="run" id="run">Run pre-clearance</button>
     <div style="margin-top:12px"><span class="pill"><span class="dot" id="beDot"></span><span id="beText">Checking backend…</span></span></div>
     <p class="srcnote">Calls <code style="font-family:var(--mono)">POST /process</code> on the FastAPI backend. If it is unreachable, the console replays the rules engine's own recorded output for the same inputs.</p>
+
+    <div class="admin" id="admin" hidden>
+      <h2>Policy administration</h2>
+      <p class="srcnote" style="margin:0 0 4px">Amending a rule creates a new version. The version in force is never edited, so decisions already taken remain reproducible.</p>
+      <div class="polnow" id="polNow">loading…</div>
+      <div class="fld-row">
+        <label><span>Value content ≥</span><input type="number" id="amPct" min="0" max="100" step="0.5"></label>
+        <label><span>Effective from</span><input type="date" id="amFrom"></label>
+      </div>
+      <label style="display:flex;flex-direction:column;gap:3px;margin-bottom:8px">
+        <span style="font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)">Reason for amendment</span>
+        <input type="text" id="amNote" placeholder="e.g. Threshold raised by gazette notification">
+      </label>
+      <button class="amend" id="amBtn">Amend rule</button>
+      <div id="amOut"></div>
+    </div>
   </aside>
 
   <main class="stage">
@@ -944,7 +981,52 @@ async function probe(){
   $("#beDot").classList.toggle("on",backendUp);
 }
 
+/* ---- policy administration (requires the backend) ---- */
+const ADMIN_CODE="AIFTA";
+async function loadPolicy(){
+  try{
+    const r=await fetch(`${API_BASE}/rules/${ADMIN_CODE}`);
+    if(!r.ok) return false;
+    const d=await r.json(), c=d.current;
+    $("#polNow").innerHTML=`In force · <b>v${c.version}</b> from <b>${esc(c.effective_from)}</b><br>
+      Value content ≥ <b>${c.value_content_min_percent}%</b> of ${esc(c.value_content_basis)}<br>
+      Tariff shift · <b>${esc(c.ctc_rule)}</b> (${c.ctc_digits}-digit)<br>
+      ${d.versions.length} version${d.versions.length===1?"":"s"} on record`;
+    $("#amPct").value=c.value_content_min_percent;
+    if(!$("#amFrom").value) $("#amFrom").value=new Date().toISOString().slice(0,10);
+    return true;
+  }catch(e){ return false; }
+}
+async function amendPolicy(){
+  const btn=$("#amBtn"), out=$("#amOut");
+  const pct=parseFloat($("#amPct").value);
+  const note=$("#amNote").value.trim();
+  if(!note){ $("#amNote").focus(); out.innerHTML=`<div class="amended">A reason is required. Every amendment is recorded in the audit log with its justification.</div>`; return; }
+  btn.disabled=true; btn.textContent="Amending…";
+  try{
+    const r=await fetch(`${API_BASE}/rules/${ADMIN_CODE}/amend`,{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({value_content_min_percent:pct,
+        effective_from:$("#amFrom").value, amendment_note:note})});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.detail||`backend returned ${r.status}`);
+    out.innerHTML=`<div class="amended">
+      <b>Version ${d.current.version} created.</b><br>
+      Threshold <span class="was">${d.previous.value_content_min_percent}%</span>
+      → <span class="now">${d.current.value_content_min_percent}%</span>,
+      effective ${esc(d.current.effective_from)}.<br>
+      Version ${d.previous.version} is unchanged and still applies to decisions already taken.
+      Re-run a case to see the new rule applied.</div>`;
+    await loadPolicy();
+  }catch(err){
+    out.innerHTML=`<div class="amended">Could not amend: ${esc(err.message)}</div>`;
+  }
+  btn.disabled=false; btn.textContent="Amend rule";
+}
+
 renderCases(); renderDocs(); renderDecl(); renderSteps(); probe();
+loadPolicy().then(ok=>{ $("#admin").hidden=!ok; });
+$("#amBtn").onclick=amendPolicy;
 document.querySelectorAll(".mtab").forEach(t=>t.onclick=()=>{
   if($("#tab1").innerHTML==="" && $("#tab2").innerHTML==="") return;  // nothing run yet
   showTab(+t.dataset.t);

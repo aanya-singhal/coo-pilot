@@ -17,7 +17,15 @@ from fastapi.responses import JSONResponse
 
 from backend.config import get_settings
 from backend.models import HealthResponse, RootResponse
-from backend.routes import claims, console, dashboard, documents, pipeline, review
+from backend.routes import (
+    claims,
+    console,
+    dashboard,
+    documents,
+    pipeline,
+    review,
+    rules,
+)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -59,6 +67,7 @@ app.include_router(documents.router)
 app.include_router(pipeline.router)
 app.include_router(dashboard.router)
 app.include_router(console.router)
+app.include_router(rules.router)
 
 
 @app.get("/", response_model=RootResponse, tags=["meta"])
