@@ -139,12 +139,25 @@ def process_claim(db: Database, storage: Storage, claim_id: str) -> dict[str, An
         )
         raise
 
+    # Stamp the decision with the rule version that produced it. Rules are
+    # amended, so a threshold is only meaningful alongside the version it
+    # came from: without this, reviewing an old decision would silently
+    # describe it under whatever rule happens to be current today.
+    origin = (rules_result.get("rules") or {}).get("origin") or {}
+    applied_rule = {
+        "agreement": origin.get("agreement"),
+        "version": origin.get("rule_version"),
+        "effective_from": origin.get("effective_from"),
+        "criterion": origin.get("criterion"),
+    }
+
     result = {
         "extraction": extraction,
         "reconciliation": rules_result.get("reconciliation"),
         "rules": rules_result.get("rules"),
         "risk": rules_result.get("risk"),
         "decision": rules_result.get("decision"),
+        "applied_rule": applied_rule,
         "raw": rules_result.get("raw"),
     }
     decision = str(result["decision"] or ClaimStatus.PENDING_REVIEW)
@@ -164,7 +177,12 @@ def process_claim(db: Database, storage: Storage, claim_id: str) -> dict[str, An
         db,
         claim_id=claim_id,
         action=audit.PROCESSING_COMPLETED,
-        details={"decision": decision, "documents_processed": len(documents)},
+        details={
+            "decision": decision,
+            "documents_processed": len(documents),
+            "rule_version": applied_rule.get("version"),
+            "agreement": applied_rule.get("agreement"),
+        },
     )
 
     return {
