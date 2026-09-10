@@ -18,6 +18,7 @@ from backend.models import (
 )
 from backend.services import audit, claims as claims_service, hashing, pipeline
 from backend.services.claims import ClaimNotFoundError
+from rules import agreements
 
 router = APIRouter(prefix="/claims", tags=["claims"])
 
@@ -116,6 +117,58 @@ def get_claim_audit(claim_id: str, db: DatabaseDep) -> list[AuditLogResponse]:
     except ClaimNotFoundError:
         raise HTTPException(status_code=404, detail=f"Claim '{claim_id}' not found")
     return [AuditLogResponse(**row) for row in audit.list_for_claim(db, claim_id)]
+
+
+@router.get("/{claim_id}/decision")
+def get_claim_decision(claim_id: str, db: DatabaseDep) -> dict[str, Any]:
+    """A stored decision, explained under the rule version that produced it.
+
+    Reviewing a decision months later must show the rule as it stood on the
+    day it was taken, not as it stands today. The stored result carries the
+    version; this looks that version up and returns its full text alongside
+    the current version, so an officer can see whether the rule has moved.
+    """
+    row = db.get_verification_result(claim_id)
+    if row is None:
+        raise HTTPException(
+            status_code=404, detail=f"No decision recorded for claim '{claim_id}'"
+        )
+
+    applied = (row.get("result") or {}).get("applied_rule") or {}
+    code, version = applied.get("agreement"), applied.get("version")
+    at_decision = agreements.get_criteria(code, version) if code else None
+    current = agreements.get_criteria(code) if code else None
+
+    def describe(criteria: Any) -> dict[str, Any] | None:
+        if criteria is None:
+            return None
+        return {
+            "version": criteria.version,
+            "effective_from": criteria.effective_from,
+            "value_content_min_percent": criteria.value_content_min_percent,
+            "ctc_rule": criteria.ctc_rule.value,
+            "criterion": criteria.describe(),
+            "amendment_note": criteria.amendment_note,
+        }
+
+    superseded = bool(
+        at_decision and current and current.version != at_decision.version
+    )
+    return {
+        "claim_id": claim_id,
+        "decision": row.get("decision"),
+        "decided_at": row.get("created_at"),
+        "applied_rule": applied,
+        "rule_at_decision": describe(at_decision),
+        "rule_now": describe(current),
+        "rule_superseded": superseded,
+        "note": (
+            "The rule has been amended since this decision was taken. It "
+            "remains valid under the version in force at the time."
+            if superseded
+            else "The rule that produced this decision is still current."
+        ),
+    }
 
 
 @router.get("/audit/verify")
