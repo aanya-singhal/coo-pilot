@@ -32,6 +32,7 @@ from backend.routes import (
 )
 
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 VERSION = "0.1.0"
 
@@ -49,16 +50,22 @@ class UTF8JSONResponse(JSONResponse):
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+async def lifespan(fastapi_app: FastAPI) -> AsyncIterator[None]:
     """Restore amended rule versions before serving any request.
 
     The registry holds version 1 of each agreement from code. Anything
     amended since lives in storage, and has to be back in the registry
     before a claim is evaluated, or a decision would silently be judged
     under a superseded rule.
+
+    Dependency overrides are honoured so that tests, which substitute an
+    in-memory database, never reach the real one on startup. Without this
+    the suite would load whatever a live database happened to contain.
     """
     try:
-        restored = rule_store.restore(get_database())
+        override = fastapi_app.dependency_overrides.get(get_database)
+        database = override() if override else get_database()
+        restored = rule_store.restore(database)
         if restored:
             logger.info("Restored %d amended rule version(s)", restored)
     except Exception:  # noqa: BLE001 - never block startup on this

@@ -14,6 +14,7 @@ from fastapi.testclient import TestClient
 from backend.database import InMemoryDatabase, get_database
 from backend.main import app
 from backend.services.storage import InMemoryStorage, get_storage
+from rules import agreements
 
 # A tiny but valid 1x1 PNG.
 PNG_BYTES = bytes.fromhex(
@@ -21,6 +22,25 @@ PNG_BYTES = bytes.fromhex(
     "890000000a49444154789c63000100000500010d0a2db40000000049454e44ae"
     "426082"
 )
+
+
+@pytest.fixture(autouse=True)
+def isolated_rule_registry() -> Iterator[None]:
+    """Keep amendments from leaking between tests.
+
+    The rule registry is module-level state, so a test that amends a rule
+    would otherwise change the starting point for every test after it - and
+    anything restored from a real database at startup would change it for
+    all of them. Each test starts from the versions defined in code.
+    """
+    snapshot = {code: list(versions) for code, versions in agreements.REGISTRY.items()}
+    agreements.REGISTRY.clear()
+    agreements.REGISTRY.update(
+        {code: [v for v in versions if v.version == 1] for code, versions in snapshot.items()}
+    )
+    yield
+    agreements.REGISTRY.clear()
+    agreements.REGISTRY.update(snapshot)
 
 
 @pytest.fixture
