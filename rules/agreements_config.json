@@ -1,0 +1,14 @@
+[
+  {
+    "code": "IJCEPA",
+    "name": "India-Japan Comprehensive Economic Partnership Agreement",
+    "value_content_min_percent": 35.0,
+    "value_content_basis": "FOB value",
+    "ctc_rule": "CTH",
+    "requires_both": true,
+    "citation": "India-Japan CEPA, Article 30 (general rule): qualifying value content of not less than 35 percent, alongside a change in tariff classification for non-originating materials. Sourced from the treaty text as excerpted in the EDIT (Electronic Database of Investment Treaties) database on 2026-09-11 - this is a secondary source; verify against the official CEPA text and the Indian gazette notification giving it effect before relying on this operationally.",
+    "source_url": "https://edit.wti.org/document/show/d42443d3-3290-4635-a1dc-2a08ff037006",
+    "verified_on": "2026-09-11",
+    "effective_from": "2011-08-01"
+  }
+]

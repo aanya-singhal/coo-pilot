@@ -21,6 +21,7 @@ from backend.config import get_settings
 from backend.database import get_database
 from backend.services import rule_store
 from backend.models import HealthResponse, RootResponse
+from rules import agreements
 from backend.routes import (
     claims,
     console,
@@ -62,6 +63,13 @@ async def lifespan(fastapi_app: FastAPI) -> AsyncIterator[None]:
     in-memory database, never reach the real one on startup. Without this
     the suite would load whatever a live database happened to contain.
     """
+    try:
+        loaded = agreements.load_from_config()
+        if loaded:
+            logger.info("Loaded %d agreement(s) from config", loaded)
+    except Exception:  # noqa: BLE001 - never block startup on this
+        logger.exception("Could not load agreements config")
+
     try:
         override = fastapi_app.dependency_overrides.get(get_database)
         database = override() if override else get_database()

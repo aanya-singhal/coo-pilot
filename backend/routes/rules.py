@@ -5,11 +5,12 @@ version and leaves the previous one intact, because decisions already taken
 under it have to stay reproducible when they are reviewed later.
 
 Every amendment is written to the audit log, so the record of *who changed
-the policy* is covered by the same hash chain as the decisions themselves.
+the policy* is covered by the same hash chain as the decisions themselves,
+and is attributed to the admin who made it.
 
-Note for reviewers: versions live in the in-process registry, so they reset
-when the service restarts. Persisting them is the obvious next step and is
-deliberately not claimed here.
+Amending a rule requires the admin role. Versions are persisted to storage
+and restored into the registry at startup, so an amendment survives a
+restart.
 """
 
 from __future__ import annotations
@@ -21,12 +22,14 @@ from pydantic import BaseModel, Field
 
 from backend.database import Database, get_database
 from backend.services import rule_store
+from backend.services.auth import ROLE_ADMIN, Actor, require_role
 from rules import agreements
 from rules.agreements import ChangeInTariffClassification
 
 router = APIRouter(prefix="/rules", tags=["rules"])
 
 DatabaseDep = Annotated[Database, Depends(get_database)]
+AdminDep = Annotated[Actor, Depends(require_role(ROLE_ADMIN))]
 
 
 class AmendRuleRequest(BaseModel):
@@ -94,8 +97,10 @@ def get_rule(code: str) -> dict[str, Any]:
 
 
 @router.post("/{code}/amend")
-def amend_rule(code: str, request: AmendRuleRequest, db: DatabaseDep) -> dict[str, Any]:
-    """Create the next version of an agreement's rule.
+def amend_rule(
+    code: str, request: AmendRuleRequest, db: DatabaseDep, actor: AdminDep
+) -> dict[str, Any]:
+    """Create the next version of an agreement's rule. Requires the admin role.
 
     Returns the new version alongside the one it supersedes, so the caller can
     show exactly what changed.
@@ -132,6 +137,7 @@ def amend_rule(code: str, request: AmendRuleRequest, db: DatabaseDep) -> dict[st
     try:
         rule_store.persist(db, new_version)
     except Exception as exc:  # noqa: BLE001
+        agreements.discard_version(new_version.code, new_version.version)
         raise HTTPException(
             status_code=503,
             detail=f"Amendment could not be stored, so it was not applied: {exc}",
@@ -154,6 +160,7 @@ def amend_rule(code: str, request: AmendRuleRequest, db: DatabaseDep) -> dict[st
                 "from": previous.ctc_rule.value,
                 "to": new_version.ctc_rule.value,
             },
+            **actor.audit_fields(),
         },
     )
 

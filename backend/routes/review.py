@@ -23,11 +23,13 @@ from backend.models import (
     ReviewDecisionRequest,
 )
 from backend.services import claims as claims_service, pipeline
+from backend.services.auth import ROLE_ADMIN, ROLE_OFFICER, Actor, require_role
 from backend.services.claims import ClaimNotFoundError
 
 router = APIRouter(prefix="/claims", tags=["review"])
 
 DatabaseDep = Annotated[Database, Depends(get_database)]
+ReviewerDep = Annotated[Actor, Depends(require_role(ROLE_OFFICER, ROLE_ADMIN))]
 
 #: Statuses that put a claim in front of a human.
 REVIEW_STATUSES = ["PENDING_REVIEW", "FAILED", "REQUESTED_INFO"]
@@ -54,7 +56,11 @@ def review_detail(claim_id: str, db: DatabaseDep) -> ClaimResultResponse:
 
 
 def _decide(
-    db: Database, claim_id: str, action: ReviewAction, payload: ReviewDecisionRequest
+    db: Database,
+    claim_id: str,
+    action: ReviewAction,
+    payload: ReviewDecisionRequest,
+    actor: Actor,
 ) -> DecisionResponse:
     try:
         decision = claims_service.record_review_decision(
@@ -63,6 +69,7 @@ def _decide(
             action=action,
             reviewer=payload.reviewer,
             comments=payload.comments,
+            actor=actor,
         )
     except ClaimNotFoundError:
         raise HTTPException(status_code=404, detail=f"Claim '{claim_id}' not found")
@@ -71,26 +78,29 @@ def _decide(
 
 @router.post("/{claim_id}/approve", response_model=DecisionResponse)
 def approve_claim(
-    claim_id: str, payload: ReviewDecisionRequest, db: DatabaseDep
+    claim_id: str, payload: ReviewDecisionRequest, db: DatabaseDep, actor: ReviewerDep
 ) -> DecisionResponse:
-    """Approve a claim. Sets status to APPROVED."""
-    return _decide(db, claim_id, ReviewAction.APPROVED, payload)
+    """Approve a claim. Sets status to APPROVED. Requires officer or admin role."""
+    return _decide(db, claim_id, ReviewAction.APPROVED, payload, actor)
 
 
 @router.post("/{claim_id}/reject", response_model=DecisionResponse)
 def reject_claim(
-    claim_id: str, payload: ReviewDecisionRequest, db: DatabaseDep
+    claim_id: str, payload: ReviewDecisionRequest, db: DatabaseDep, actor: ReviewerDep
 ) -> DecisionResponse:
-    """Reject a claim. Sets status to REJECTED."""
-    return _decide(db, claim_id, ReviewAction.REJECTED, payload)
+    """Reject a claim. Sets status to REJECTED. Requires officer or admin role."""
+    return _decide(db, claim_id, ReviewAction.REJECTED, payload, actor)
 
 
 @router.post("/{claim_id}/request-info", response_model=DecisionResponse)
 def request_information(
-    claim_id: str, payload: ReviewDecisionRequest, db: DatabaseDep
+    claim_id: str, payload: ReviewDecisionRequest, db: DatabaseDep, actor: ReviewerDep
 ) -> DecisionResponse:
-    """Ask the importer for more information. Sets status to REQUESTED_INFO."""
-    return _decide(db, claim_id, ReviewAction.REQUESTED_INFO, payload)
+    """Ask the importer for more information. Sets status to REQUESTED_INFO.
+
+    Requires officer or admin role.
+    """
+    return _decide(db, claim_id, ReviewAction.REQUESTED_INFO, payload, actor)
 
 
 @router.get("/{claim_id}/decisions", response_model=list[DecisionResponse])

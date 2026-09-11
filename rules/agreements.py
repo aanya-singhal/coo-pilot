@@ -12,8 +12,16 @@ which criterion it applied so a reviewing officer can check it.
 
 from __future__ import annotations
 
+import json
+import logging
 from dataclasses import dataclass, replace
 from enum import StrEnum
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
+#: Where load_from_config() looks by default. Override with the path arg.
+DEFAULT_CONFIG_PATH = Path(__file__).parent / "agreements_config.json"
 
 
 class ChangeInTariffClassification(StrEnum):
@@ -172,6 +180,22 @@ def register_version(criteria: OriginCriteria) -> OriginCriteria:
     return criteria
 
 
+def discard_version(code: str, version: int) -> None:
+    """Remove a just-registered version that failed to persist.
+
+    The registry is a cache in front of the database; if the write fails,
+    the cache must not keep a version the database never saw, or a decision
+    could be judged under a rule that disappears the moment the service
+    restarts. Only removes the *current* (most recent) version, since
+    versions are otherwise append-only and never edited or removed once
+    accepted.
+    """
+    versions = REGISTRY.get(code)
+    if not versions or versions[-1].version != version:
+        return
+    versions.pop()
+
+
 def amend(
     code: str,
     *,
@@ -200,3 +224,73 @@ def amend(
             amendment_note=amendment_note,
         )
     )
+
+
+def load_from_config(path: Path | None = None) -> int:
+    """Register any new agreements defined in a JSON config file.
+
+    This is what makes the engine configurable without touching this file's
+    code: adding a government/department's rule set is "write a JSON entry
+    and restart", not "edit Python and redeploy". It only *adds* agreements
+    - AIFTA and SAFTA stay defined in code above, since those thresholds
+    were individually verified against a cited legal source, and a
+    generic loader has no way to enforce that same rigor. Re-running this
+    is safe: an agreement code already in the registry is left alone
+    entirely, in-code or previously loaded.
+
+    Expected JSON shape - a list of objects, each matching the fields
+    below:
+
+        [
+          {
+            "code": "ICIA",
+            "name": "Example Comprehensive Investment Agreement",
+            "value_content_min_percent": 40.0,
+            "value_content_basis": "FOB value",
+            "ctc_rule": "CTH",
+            "requires_both": true,
+            "citation": "Article 3, Rules of Origin ...",
+            "source_url": "https://example.gov/rules-of-origin",
+            "verified_on": "2026-09-11"
+          }
+        ]
+
+    Returns how many new agreements were registered.
+    """
+    config_path = path or DEFAULT_CONFIG_PATH
+    if not config_path.exists():
+        return 0
+
+    try:
+        entries = json.loads(config_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        logger.exception("Could not read agreements config at %s", config_path)
+        return 0
+
+    added = 0
+    for entry in entries:
+        try:
+            code = str(entry["code"]).strip().upper()
+            if code in REGISTRY:
+                continue  # already defined in code or loaded previously
+            criteria = OriginCriteria(
+                code=code,
+                name=entry["name"],
+                value_content_min_percent=float(entry["value_content_min_percent"]),
+                value_content_basis=entry["value_content_basis"],
+                ctc_rule=ChangeInTariffClassification(entry["ctc_rule"]),
+                requires_both=bool(entry.get("requires_both", True)),
+                citation=entry["citation"],
+                source_url=entry["source_url"],
+                verified_on=entry.get("verified_on", "unverified"),
+                effective_from=entry["effective_from"],
+            )
+        except (KeyError, ValueError, TypeError) as exc:
+            logger.warning("Skipping malformed agreement config entry: %s", exc)
+            continue
+        REGISTRY[code] = [criteria]
+        added += 1
+
+    if added:
+        logger.info("Loaded %d agreement(s) from config", added)
+    return added

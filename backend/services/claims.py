@@ -11,6 +11,7 @@ from backend.config import ALLOWED_CONTENT_TYPES, ALLOWED_EXTENSIONS
 from backend.database import Database
 from backend.models import ClaimStatus, DocumentType, ReviewAction
 from backend.services import audit
+from backend.services.auth import ANONYMOUS, Actor
 from backend.services.storage import Storage, build_storage_path
 
 #: Audit action recorded for each reviewer disposition.
@@ -74,8 +75,17 @@ def record_review_decision(
     action: ReviewAction,
     reviewer: str,
     comments: str | None,
+    actor: Actor = ANONYMOUS,
 ) -> dict[str, Any]:
-    """Apply a reviewer's decision: update status, record it, audit it."""
+    """Apply a reviewer's decision: update status, record it, audit it.
+
+    ``reviewer`` is the free-text name shown on the decision (kept for
+    backward compatibility); ``actor`` is who RBAC authenticated the
+    request as, and is what the audit trail treats as ground truth for
+    "who did this" - the two are recorded separately so a mismatch between
+    the claimed name and the authenticated identity is visible rather than
+    silently trusted.
+    """
     get_claim(db, claim_id)  # raises ClaimNotFoundError
 
     decision = db.create_decision(
@@ -90,7 +100,11 @@ def record_review_decision(
         db,
         claim_id=claim_id,
         action=_REVIEW_AUDIT_ACTIONS[action],
-        details={"reviewer": reviewer, "comments": comments},
+        details={
+            "reviewer": reviewer,
+            "comments": comments,
+            **actor.audit_fields(),
+        },
     )
     return decision
 

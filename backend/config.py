@@ -35,10 +35,15 @@ class Settings:
     supabase_key: str
     supabase_bucket: str
     cors_origins: tuple[str, ...]
+    api_keys_raw: str
 
     @property
     def supabase_configured(self) -> bool:
         return bool(self.supabase_url and self.supabase_key)
+
+    @property
+    def auth_configured(self) -> bool:
+        return bool(self.api_keys_raw)
 
 
 @lru_cache
@@ -52,4 +57,5 @@ def get_settings() -> Settings:
         supabase_key=os.getenv("SUPABASE_KEY", "").strip(),
         supabase_bucket=os.getenv("SUPABASE_BUCKET", "documents").strip(),
         cors_origins=origins or ("*",),
+        api_keys_raw=os.getenv("API_KEYS", "").strip(),
     )
